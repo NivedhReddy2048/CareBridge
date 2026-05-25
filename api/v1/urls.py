@@ -6,12 +6,14 @@ from api.v1.views.auth_views import CustomTokenObtainPairView
 from api.v1.views.ehr_views import EHRViewSet
 from api.v1.views.appointment_views import AppointmentViewSet, DoctorViewSet
 from api.v1.views.billing_views import create_payment_session, verify_payment
+from api.v1.views.notification_views import NotificationViewSet
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
 router.register(r'ehr/records', EHRViewSet, basename='ehr')
 router.register(r'appointments', AppointmentViewSet, basename='appointment')
 router.register(r'doctors', DoctorViewSet, basename='doctor')
+router.register(r'notifications', NotificationViewSet, basename='notification')
 
 urlpatterns = [
     # Swagger Docs

@@ -279,6 +279,20 @@ def book_appointment_view(request):
         
         send_notification(doctor.user, f"New Request: {request.user.first_name} for {date} at {time}", 'appointment')
         
+        # Phase 5: Push Realtime Websocket Event
+        try:
+            from notifications.services import NotificationService
+            NotificationService.send_notification(
+                user=doctor.user,
+                n_type='APPOINTMENT_BOOKED',
+                title='New Appointment Request',
+                message=f"{request.user.first_name} booked a session for {date} at {time}.",
+                priority='high',
+                link="/dashboard/doctor/"
+            )
+        except Exception as e:
+            logger.error(f"Failed to push realtime notification: {e}")
+        
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'success', 'appointment_id': appointment.id})
             

@@ -1,0 +1,114 @@
+<!-- Toast Container for Realtime Notifications -->
+<div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+        <!-- Toasts will be injected here via JavaScript -->
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Only attempt WebSocket connection if the user has a JWT token stored locally or via session.
+        // For CareBridge monolithic UI, we can fetch token from local storage or cookie, or inject a temporary socket token.
+        // Here we assume the frontend can retrieve the token from localStorage (if DRF API was used to login)
+        const token = localStorage.getItem('access_token');
+        
+        if (!token && "{{ request.user.is_authenticated }}" !== "True") {
+            return; // Don't connect if entirely unauthenticated
+        }
+
+        // Determine protocol
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        let wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
+        
+        if (token) {
+            wsUrl += `?token=${token}`;
+        }
+        
+        let socket = null;
+        let reconnectInterval = 3000;
+        let maxReconnectAttempts = 5;
+        let reconnectAttempts = 0;
+        
+        function connectWebSocket() {
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = function(e) {
+                console.log("[WebSocket] Connected successfully to Real-time Notification Service.");
+                reconnectAttempts = 0; // Reset on success
+                reconnectInterval = 3000;
+            };
+
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                if (data.type === 'notification') {
+                    showToast(data.payload);
+                }
+            };
+
+            socket.onclose = function(e) {
+                if (e.code === 4003 || e.code === 4001) {
+                    // Custom or auth failure codes, don't retry blindly
+                    console.warn("[WebSocket] Connection rejected due to auth. Halting reconnects.");
+                    return;
+                }
+                
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.warn(`[WebSocket] Connection closed. Reconnecting in ${reconnectInterval/1000}s... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                    setTimeout(connectWebSocket, reconnectInterval);
+                    reconnectInterval = Math.min(reconnectInterval * 2, 30000); // Exponential backoff up to 30s
+                } else {
+                    console.error("[WebSocket] Max reconnect attempts reached. Giving up.");
+                }
+            };
+            
+            socket.onerror = function(err) {
+                console.error("[WebSocket] Encountered error: ", err, "Closing socket.");
+                socket.close();
+            };
+        }
+
+        function showToast(notification) {
+            const container = document.getElementById('toast-container');
+            const toastId = 'toast-' + notification.id;
+            
+            // Map priority to Bootstrap colors
+            let bgClass = 'bg-primary';
+            if (notification.type === 'AI_ANALYSIS_READY') bgClass = 'bg-success';
+            if (notification.type === 'APPOINTMENT_BOOKED') bgClass = 'bg-info';
+            if (notification.priority === 'urgent' || notification.priority === 'high') bgClass = 'bg-warning text-dark';
+
+            let linkHtml = '';
+            if (notification.link) {
+                linkHtml = `<div class="mt-2 pt-2 border-top"><a href="${notification.link}" class="btn btn-sm btn-light">View Details</a></div>`;
+            }
+            
+            const html = `
+                <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="10000">
+                  <div class="toast-header ${bgClass} text-white">
+                    <i class="fa-solid fa-bell me-2"></i>
+                    <strong class="me-auto">${notification.title}</strong>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                  </div>
+                  <div class="toast-body">
+                    ${notification.message}
+                    ${linkHtml}
+                  </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+            
+            // Cleanup DOM after hidden
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        }
+
+        connectWebSocket();
+    });
+</script>

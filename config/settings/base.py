@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
 
     # Third-party Apps
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
     'corsheaders',
+    'channels',
 
     # Custom Apps
     'accounts',
@@ -52,6 +54,7 @@ INSTALLED_APPS = [
     'ehr',
     'intelligence',
     'api',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -221,3 +224,25 @@ CORS_ALLOW_ALL_ORIGINS = True if DEBUG else False
 # Billing & Payment (Razorpay)
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
+
+# ==========================================
+# PHASE 5: Channels & Real-time Websockets
+# ==========================================
+ASGI_APPLICATION = "config.asgi.application"
+
+# Redis channel layer in production, in-memory fallback locally
+if os.environ.get("REDIS_URL"):
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [os.environ.get("REDIS_URL")],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }

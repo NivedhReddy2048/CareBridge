@@ -54,6 +54,29 @@ def process_ehr_document(attachment_id):
             }
         )
         
+        # 5. Push Real-time WebSocket Notification
+        from notifications.services import NotificationService
+        patient = doc.ehr_record.patient
+        NotificationService.send_notification(
+            user=patient,
+            n_type='AI_ANALYSIS_READY',
+            title='AI Analysis Ready',
+            message=f"The AI analysis for your document '{doc.ehr_record.title}' is now ready.",
+            priority='high',
+            link=f"/ehr/dashboard/"
+        )
+        
+        # Also notify doctor if linked
+        for link in doc.ehr_record.appointment_links.all():
+            NotificationService.send_notification(
+                user=link.appointment.doctor.user,
+                n_type='AI_ANALYSIS_READY',
+                title='Patient EHR Analysis Ready',
+                message=f"AI analysis for {patient.get_full_name()}'s document is complete.",
+                priority='normal',
+                link=f"/dashboard/doctor/"
+            )
+        
         logger.info(f"Successfully processed DocumentAttachment ID: {attachment_id}")
         
     except Exception as e:
