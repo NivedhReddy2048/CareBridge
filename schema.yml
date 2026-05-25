@@ -1,0 +1,1058 @@
+openapi: 3.0.3
+info:
+  title: CareBridge Enterprise API
+  version: 1.0.0
+  description: Phase-4 REST API for CareBridge Healthcare Platform
+paths:
+  /api/v1/appointments/:
+    get:
+      operationId: appointments_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAppointmentList'
+          description: ''
+    post:
+      operationId: appointments_create
+      tags:
+      - appointments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+          description: ''
+  /api/v1/appointments/{id}/:
+    get:
+      operationId: appointments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this appointment.
+        required: true
+      tags:
+      - appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+          description: ''
+    put:
+      operationId: appointments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this appointment.
+        required: true
+      tags:
+      - appointments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+          description: ''
+    patch:
+      operationId: appointments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this appointment.
+        required: true
+      tags:
+      - appointments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAppointment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAppointment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAppointment'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+          description: ''
+    delete:
+      operationId: appointments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this appointment.
+        required: true
+      tags:
+      - appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/appointments/book/:
+    post:
+      operationId: appointments_book_create
+      tags:
+      - appointments
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+          description: ''
+  /api/v1/auth/token/:
+    post:
+      operationId: auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web token
+        with custom claims like role and username.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomTokenObtainPair'
+          description: ''
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/billing/create-order/:
+    post:
+      operationId: billing_create_order_create
+      tags:
+      - billing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateOrder'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutDataResponse'
+          description: ''
+  /api/v1/billing/verify-payment/:
+    post:
+      operationId: billing_verify_payment_create
+      tags:
+      - billing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPayment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifyPayment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyPayment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyPaymentResponse'
+          description: ''
+  /api/v1/doctors/:
+    get:
+      operationId: doctors_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - doctors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDoctorList'
+          description: ''
+  /api/v1/doctors/{id}/:
+    get:
+      operationId: doctors_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this doctor.
+        required: true
+      tags:
+      - doctors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+          description: ''
+  /api/v1/ehr/ai-summary/{id}/:
+    get:
+      operationId: ehr_ai_summary_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ehr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRRecord'
+          description: ''
+  /api/v1/ehr/records/:
+    get:
+      operationId: ehr_records_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - ehr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEHRRecordList'
+          description: ''
+    post:
+      operationId: ehr_records_create
+      tags:
+      - ehr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRRecord'
+          description: ''
+  /api/v1/ehr/records/{id}/:
+    get:
+      operationId: ehr_records_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this ehr record.
+        required: true
+      tags:
+      - ehr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRRecord'
+          description: ''
+    put:
+      operationId: ehr_records_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this ehr record.
+        required: true
+      tags:
+      - ehr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRRecord'
+          description: ''
+    patch:
+      operationId: ehr_records_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this ehr record.
+        required: true
+      tags:
+      - ehr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEHRRecord'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEHRRecord'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEHRRecord'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRRecord'
+          description: ''
+    delete:
+      operationId: ehr_records_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this ehr record.
+        required: true
+      tags:
+      - ehr
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/ehr/records/{id}/ai_summary/:
+    get:
+      operationId: ehr_records_ai_summary_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this ehr record.
+        required: true
+      tags:
+      - ehr
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRRecord'
+          description: ''
+  /api/v1/ehr/records/upload/:
+    post:
+      operationId: ehr_records_upload_create
+      tags:
+      - ehr
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRRecord'
+          description: ''
+  /api/v1/ehr/upload/:
+    post:
+      operationId: ehr_upload_create
+      tags:
+      - ehr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EHRRecord'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EHRRecord'
+          description: ''
+components:
+  schemas:
+    AIAnalysisResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        ai_summary:
+          nullable: true
+          description: Structured summary of the document
+        identified_conditions:
+          nullable: true
+          description: List of extracted conditions
+        extracted_medications:
+          nullable: true
+          description: List of extracted medications
+        confidence_score:
+          type: number
+          format: double
+        raw_extracted_text:
+          type: string
+          nullable: true
+        processed_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - processed_at
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        patient:
+          type: integer
+          readOnly: true
+        patient_details:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        doctor:
+          type: integer
+        doctor_details:
+          allOf:
+          - $ref: '#/components/schemas/Doctor'
+          readOnly: true
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+          format: time
+        reason:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        meeting_link:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          description: Auto-generated video link
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - date
+      - doctor
+      - doctor_details
+      - id
+      - meeting_link
+      - patient
+      - patient_details
+      - reason
+      - status
+      - time
+    CheckoutDataResponse:
+      type: object
+      properties:
+        order_id:
+          type: string
+        key:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+      required:
+      - amount
+      - currency
+      - key
+      - order_id
+    CreateOrder:
+      type: object
+      properties:
+        appointment_id:
+          type: integer
+      required:
+      - appointment_id
+    CustomTokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - username
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        specialization:
+          allOf:
+          - $ref: '#/components/schemas/SpecializationEnum'
+          description: |-
+            Select specialization. The Department will automatically update to match this.
+
+            * `General Physician` - General Physician
+            * `Cardiologist` - Cardiologist
+            * `Dermatologist` - Dermatologist
+            * `Orthopedic` - Orthopedic
+            * `Neurologist` - Neurologist
+            * `Pediatrician` - Pediatrician
+            * `Psychiatrist` - Psychiatrist
+            * `Dentist` - Dentist
+            * `ENT` - ENT Specialist
+            * `Gynecologist` - Gynecologist
+        qualification:
+          type: string
+          description: e.g. MBBS, MD
+          maxLength: 100
+        experience_years:
+          type: integer
+          description: Years of experience (Used for ranking)
+        consultation_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        is_available:
+          type: boolean
+      required:
+      - id
+      - user
+    DocumentAttachment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        file_url:
+          type: string
+          nullable: true
+          readOnly: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+        ai_analysis:
+          allOf:
+          - $ref: '#/components/schemas/AIAnalysisResult'
+          readOnly: true
+      required:
+      - ai_analysis
+      - file_url
+      - id
+      - uploaded_at
+    EHRRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        patient:
+          type: integer
+          readOnly: true
+        patient_name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        record_type:
+          $ref: '#/components/schemas/RecordTypeEnum'
+        record_type_display:
+          type: string
+          readOnly: true
+        date_of_record:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentAttachment'
+          readOnly: true
+      required:
+      - attachments
+      - created_at
+      - date_of_record
+      - id
+      - patient
+      - patient_name
+      - record_type_display
+      - title
+    PaginatedAppointmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appointment'
+    PaginatedDoctorList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Doctor'
+    PaginatedEHRRecordList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EHRRecord'
+    PatchedAppointment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        patient:
+          type: integer
+          readOnly: true
+        patient_details:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        doctor:
+          type: integer
+        doctor_details:
+          allOf:
+          - $ref: '#/components/schemas/Doctor'
+          readOnly: true
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+          format: time
+        reason:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        meeting_link:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+          description: Auto-generated video link
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedEHRRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        patient:
+          type: integer
+          readOnly: true
+        patient_name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        record_type:
+          $ref: '#/components/schemas/RecordTypeEnum'
+        record_type_display:
+          type: string
+          readOnly: true
+        date_of_record:
+          type: string
+          format: date
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentAttachment'
+          readOnly: true
+    RecordTypeEnum:
+      enum:
+      - lab_report
+      - prescription
+      - scan
+      - blood_report
+      - general
+      type: string
+      description: |-
+        * `lab_report` - Lab Report
+        * `prescription` - Prescription
+        * `scan` - Medical Scan
+        * `blood_report` - Blood Report
+        * `general` - General Record
+    RoleEnum:
+      enum:
+      - admin
+      - doctor
+      - patient
+      type: string
+      description: |-
+        * `admin` - Admin
+        * `doctor` - Doctor
+        * `patient` - Patient
+    SpecializationEnum:
+      enum:
+      - General Physician
+      - Cardiologist
+      - Dermatologist
+      - Orthopedic
+      - Neurologist
+      - Pediatrician
+      - Psychiatrist
+      - Dentist
+      - ENT
+      - Gynecologist
+      type: string
+      description: |-
+        * `General Physician` - General Physician
+        * `Cardiologist` - Cardiologist
+        * `Dermatologist` - Dermatologist
+        * `Orthopedic` - Orthopedic
+        * `Neurologist` - Neurologist
+        * `Pediatrician` - Pediatrician
+        * `Psychiatrist` - Psychiatrist
+        * `Dentist` - Dentist
+        * `ENT` - ENT Specialist
+        * `Gynecologist` - Gynecologist
+    StatusEnum:
+      enum:
+      - pending
+      - confirmed
+      - completed
+      - cancelled
+      - doctor_missed
+      type: string
+      description: |-
+        * `pending` - Pending Approval
+        * `confirmed` - Confirmed
+        * `completed` - Completed
+        * `cancelled` - Cancelled
+        * `doctor_missed` - Doctor Missed
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 15
+      required:
+      - id
+      - username
+    VerifyPayment:
+      type: object
+      properties:
+        razorpay_order_id:
+          type: string
+        razorpay_payment_id:
+          type: string
+        razorpay_signature:
+          type: string
+      required:
+      - razorpay_order_id
+      - razorpay_payment_id
+      - razorpay_signature
+    VerifyPaymentResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        transaction_id:
+          type: integer
+      required:
+      - status
+      - transaction_id
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

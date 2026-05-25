@@ -18,6 +18,7 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('billing/', include('billing.urls')),
     path('ehr/', include('ehr.urls')),
+    path('api/v1/', include('api.v1.urls')),
 ]
 
 if settings.DEBUG:
