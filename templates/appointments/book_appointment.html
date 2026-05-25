@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-
 {% block content %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -264,12 +264,129 @@
         }));
 
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             if (!hiddenTime.value) {
-                e.preventDefault();
                 document.getElementById('timeError').classList.remove('d-none');
                 hiddenTime.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
             }
+            
+            const confirmBtn = document.getElementById('confirmBtn');
+            const originalText = confirmBtn.innerHTML;
+            confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Processing...';
+            confirmBtn.disabled = true;
+
+            const formData = new FormData(this);
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // 1. Submit appointment data
+            fetch("{% url 'book_appointment' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {'x-requested-with': 'XMLHttpRequest'}
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    // 2. Create Razorpay Session
+                    fetch("/billing/api/create-session/", {
+                        method: "POST",
+                        body: JSON.stringify({appointment_id: data.appointment_id}),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(checkoutData => {
+                        if(checkoutData.error) {
+                            alert("Payment Error: " + checkoutData.error);
+                            confirmBtn.innerHTML = originalText;
+                            confirmBtn.disabled = false;
+                            return;
+                        }
+                        
+                         // 3. Open Razorpay Modal
+                         var options = {
+                             "key": checkoutData.key_id,
+                             "amount": checkoutData.amount,
+                             "currency": checkoutData.currency,
+                             "name": "CareBridge",
+                             "description": "Consultation Fee",
+                             "order_id": checkoutData.order_id,
+                             "handler": function (response){
+                                 confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Verifying...';
+                                 
+                                 // 4. Verify Payment
+                                 fetch("/billing/api/verify-payment/", {
+                                     method: "POST",
+                                     body: JSON.stringify({
+                                         razorpay_order_id: response.razorpay_order_id,
+                                         razorpay_payment_id: response.razorpay_payment_id,
+                                         razorpay_signature: response.razorpay_signature
+                                     }),
+                                     headers: {
+                                         'Content-Type': 'application/json',
+                                         'X-CSRFToken': csrfToken
+                                     }
+                                 })
+                                 .then(res => res.json())
+                                 .then(verificationData => {
+                                     if(verificationData.status === 'success') {
+                                         window.location.href = "/billing/success/?txn_id=" + verificationData.transaction_id;
+                                     } else {
+                                         alert("Payment verification failed: " + (verificationData.error || "Please contact support."));
+                                         confirmBtn.innerHTML = originalText;
+                                         confirmBtn.disabled = false;
+                                     }
+                                 })
+                                 .catch(err => {
+                                     console.error("Verification error:", err);
+                                     alert("A network error occurred during verification. Please contact support.");
+                                     confirmBtn.innerHTML = originalText;
+                                     confirmBtn.disabled = false;
+                                 });
+                             },
+                             "modal": {
+                                 "ondismiss": function(){
+                                     confirmBtn.innerHTML = originalText;
+                                     confirmBtn.disabled = false;
+                                 }
+                             },
+                             "theme": { "color": "#198754" }
+                         };
+                         var rzp1 = new Razorpay(options);
+                         rzp1.on('payment.failed', function (response){
+                             alert("Payment Failed: " + response.error.description);
+                         });
+                         rzp1.open();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Error initializing payment.");
+                        confirmBtn.innerHTML = originalText;
+                        confirmBtn.disabled = false;
+                    });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
+            });
         });
+    });
+
+    // --- BFCache Handling ---
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            // Restore button state if user navigates back using browser back button
+            const confirmBtn = document.getElementById('confirmBtn');
+            if (confirmBtn) {
+                confirmBtn.innerHTML = 'Confirm Appointment <i class="fa-solid fa-paper-plane ms-2"></i>';
+                confirmBtn.disabled = false;
+            }
+        }
     });
 </script>
 

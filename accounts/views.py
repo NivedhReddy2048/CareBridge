@@ -120,8 +120,12 @@ def register_view(request):
                 return redirect('verify_otp')
                 
             except Exception as e:
+                import traceback
+                print("\n=== EMAIL SEND FAILURE ===")
+                traceback.print_exc()
+                print("==========================\n")
                 user.delete()
-                messages.error(request, "Error sending email. Registration cancelled.")
+                messages.error(request, f"Error sending email. Registration cancelled. Error: {str(e)}")
         else:
             messages.error(request, "Registration Failed. Please check inputs.")
     else:

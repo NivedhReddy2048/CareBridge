@@ -147,7 +147,7 @@
                                                     Options
                                                 </button>
                                                 <ul class="dropdown-menu shadow border-0 p-2">
-                                                    <li><a class="dropdown-item small rounded-2 text-success" href="#"><i class="fa-solid fa-video me-2"></i>Join Video Call</a></li>
+                                                    <li><a class="dropdown-item small rounded-2 text-success" href="{% url 'join_meeting' appointment.id %}" target="_blank"><i class="fa-solid fa-video me-2"></i>Join Video Call</a></li>
                                                     <li><hr class="dropdown-divider"></li>
                                                     <li><a class="dropdown-item small rounded-2 text-danger" href="{% url 'cancel_appointment' appointment.id %}"><i class="fa-solid fa-times me-2"></i>Cancel</a></li>
                                                 </ul>

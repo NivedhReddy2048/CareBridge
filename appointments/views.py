@@ -247,9 +247,13 @@ def book_appointment_view(request):
             return redirect('book_appointment')
 
         doctor = get_object_or_404(Doctor, id=doctor_id)
-        Appointment.objects.create(patient=request.user, doctor=doctor, date=date, time=time, reason=reason, status='pending')
+        appointment = Appointment.objects.create(patient=request.user, doctor=doctor, date=date, time=time, reason=reason, status='pending')
         
         send_notification(doctor.user, f"New Request: {request.user.first_name} for {date} at {time}", 'appointment')
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'success', 'appointment_id': appointment.id})
+            
         messages.success(request, "Request Sent! Waiting for doctor confirmation.")
         return redirect('patient_dashboard')
 

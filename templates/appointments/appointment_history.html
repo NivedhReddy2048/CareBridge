@@ -18,6 +18,7 @@
                             <th>Time</th>
                             <th>Reason</th>
                             <th>Status</th>
+                            <th>Payment</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -34,6 +35,22 @@
                                     {% else %}bg-warning text-dark{% endif %}">
                                     {{ appt.status|title }}
                                 </span>
+                            </td>
+                            <td>
+                                {% with txn=appt.billing_transactions.first %}
+                                    {% if txn and txn.payment_status == 'SUCCESS' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Paid</span>
+                                        {% if txn.invoice %}
+                                            <a href="{% url 'download_invoice' txn.invoice.id %}" class="btn btn-sm btn-outline-success ms-2 rounded-circle" title="Download Invoice">
+                                                <i class="fa-solid fa-download"></i>
+                                            </a>
+                                        {% endif %}
+                                    {% elif txn %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">{{ txn.payment_status|title }}</span>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                {% endwith %}
                             </td>
                         </tr>
                         {% empty %}

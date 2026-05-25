@@ -11,7 +11,9 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Load environment variables from .env file
-load_dotenv(BASE_DIR / '.env')
+env_path = BASE_DIR / '.env'
+load_dotenv(env_path)
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-secret-key-change-this')
@@ -20,6 +22,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-secret-key-change-
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
+if 'testserver' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('testserver')
 
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if os.getenv('CSRF_TRUSTED_ORIGINS') else []
 
@@ -37,6 +41,7 @@ INSTALLED_APPS = [
     'appointments',
     'records',
     'dashboard',
+    'billing',
 ]
 
 MIDDLEWARE = [
@@ -114,7 +119,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # Email backend configuration
-EMAIL_BACKEND = 'healthcare_system.email_backend.CustomEmailBackend'
+EMAIL_BACKEND = 'config.email_backend.CustomEmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
@@ -141,3 +146,7 @@ DATABASES = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Billing & Payment (Razorpay)
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
