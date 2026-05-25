@@ -8,8 +8,10 @@ import os
 
 logger = logging.getLogger(__name__)
 
-@shared_task
-def process_ehr_document(attachment_id):
+@shared_task(bind=True)
+def process_ehr_document(self, attachment_id):
+    from django.utils import timezone
+    start_time = timezone.now()
     logger.info(f"Starting true AI processing for DocumentAttachment ID: {attachment_id}")
     
     try:
@@ -54,7 +56,7 @@ def process_ehr_document(attachment_id):
             }
         )
         
-        # 5. Push Real-time WebSocket Notification
+        # Phase 6: Push Real-time WebSocket Notification
         from notifications.services import NotificationService
         patient = doc.ehr_record.patient
         NotificationService.send_notification(
@@ -79,5 +81,45 @@ def process_ehr_document(attachment_id):
         
         logger.info(f"Successfully processed DocumentAttachment ID: {attachment_id}")
         
+        # Phase 6: Save Celery Observability Metrics
+        from analytics.models import AIProcessingMetrics
+        from django.utils import timezone
+        end_time = timezone.now()
+        duration = (end_time - start_time).total_seconds()
+        
+        AIProcessingMetrics.objects.create(
+            document=doc,
+            task_id=self.request.id,
+            start_time=start_time,
+            end_time=end_time,
+            duration_seconds=duration,
+            ocr_method=extraction_method,
+            is_success=True,
+            confidence_score=analysis['confidence']
+        )
+        
     except Exception as e:
         logger.error(f"Failed to process DocumentAttachment ID {attachment_id}: {str(e)}")
+        
+        # Phase 6: Log Failure Metrics
+        from analytics.models import ErrorEventLog, AIProcessingMetrics
+        from django.utils import timezone
+        import traceback
+        
+        ErrorEventLog.objects.create(
+            source='Celery.process_ehr_document',
+            error_type=type(e).__name__,
+            error_message=str(e),
+            stack_trace=traceback.format_exc()
+        )
+        
+        AIProcessingMetrics.objects.create(
+            document_id=attachment_id,
+            task_id=self.request.id,
+            start_time=start_time,
+            end_time=timezone.now(),
+            duration_seconds=(timezone.now() - start_time).total_seconds(),
+            ocr_method='FAILED',
+            is_success=False,
+            confidence_score=0.0
+        )

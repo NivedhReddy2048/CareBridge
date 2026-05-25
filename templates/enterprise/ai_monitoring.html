@@ -1,0 +1,89 @@
+{% extends 'enterprise/base_enterprise.html' %}
+
+{% block header_title %}AI Pipeline Monitoring{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Document / Patient</th>
+                        <th>Extracted Conditions</th>
+                        <th>Confidence</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in page_obj %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ result.document.file.name|truncatechars:30 }}</div>
+                            <div class="small text-muted">{{ result.document.ehr_record.patient.get_full_name|default:result.document.ehr_record.patient.username }}</div>
+                        </td>
+                        <td>
+                            {% if result.identified_conditions %}
+                                {% for cond in result.identified_conditions|slice:":3" %}
+                                    <span class="badge bg-secondary me-1">{{ cond }}</span>
+                                {% endfor %}
+                                {% if result.identified_conditions|length > 3 %}
+                                    <span class="badge bg-light text-dark">+{{ result.identified_conditions|length|add:"-3" }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted fst-italic">None detected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if result.confidence_score > 0.8 %}
+                                <span class="text-success fw-bold"><i class="fa-solid fa-check-circle me-1"></i>{{ result.confidence_score }}</span>
+                            {% elif result.confidence_score > 0.5 %}
+                                <span class="text-warning fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ result.confidence_score }}</span>
+                            {% else %}
+                                <span class="text-danger fw-bold"><i class="fa-solid fa-circle-xmark me-1"></i>{{ result.confidence_score }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if result.ai_summary.is_error %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger">Failed</span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success border border-success">Success</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4 text-muted small">
+                            {{ result.processed_at|date:"M d, Y H:i" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No AI records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-center mt-4">
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+            {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+            {% endif %}
+            
+            <li class="page-item active"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+            
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

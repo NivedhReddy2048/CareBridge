@@ -47,6 +47,14 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 status='pending'
             )
 
+            # Phase 6: AI Triage Estimation
+            try:
+                from analytics.services.triage_service import TriageEngine
+                TriageEngine.estimate_triage(symptoms=reason, patient=request.user, appointment=appointment)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to generate triage estimate: {e}")
+
             if ehr_file:
                 from ehr.models import EHRRecord, DocumentAttachment, AppointmentEHRLink, AuditLog
                 record = EHRRecord.objects.create(

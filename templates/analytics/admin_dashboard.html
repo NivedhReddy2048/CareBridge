@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}CareBridge Enterprise Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Enterprise Analytics Dashboard</h2>
+        <button class="btn btn-primary" onclick="fetchAnalytics()"><i class="fa-solid fa-rotate-right me-2"></i>Refresh Data</button>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <h5 class="card-title">Total Appointments</h5>
+                    <h2 class="display-4 fw-bold" id="metric-appointments">...</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <h2 class="display-4 fw-bold" id="metric-revenue">...</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <h5 class="card-title">Active Patients</h5>
+                    <h2 class="display-4 fw-bold" id="metric-patients">...</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <h5 class="card-title">Active Doctors</h5>
+                    <h2 class="display-4 fw-bold" id="metric-doctors">...</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Appointment Status Chart -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-white fw-bold">
+                    Appointments by Status
+                </div>
+                <div class="card-body">
+                    <canvas id="appointmentsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- AI/OCR Metrics Chart -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-white fw-bold">
+                    AI Pipeline Health (OCR Success Rate)
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <canvas id="ocrChart" width="300" height="300"></canvas>
+                    <h4 class="mt-3" id="ocr-percentage-text">...</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let statusChartInstance = null;
+    let ocrChartInstance = null;
+
+    async function fetchAnalytics() {
+        try {
+            // Need to pass JWT token from localStorage for DRF API
+            const token = localStorage.getItem('access_token');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            const res = await fetch('/api/v1/analytics/overview/', { 
+                headers: headers,
+                credentials: 'same-origin'
+            });
+            
+            if (res.status === 401 || res.status === 403) {
+                alert("Unauthorized. Please log in as an administrator.");
+                return;
+            }
+            
+            if (!res.ok) {
+                throw new Error(`API returned status ${res.status}`);
+            }
+
+            const data = await res.json();
+            
+            // Update Metrics
+            document.getElementById('metric-appointments').innerText = data.total_appointments;
+            document.getElementById('metric-revenue').innerText = '$' + data.total_revenue.toFixed(2);
+            document.getElementById('metric-patients').innerText = data.active_patients;
+            document.getElementById('metric-doctors').innerText = data.active_doctors;
+            document.getElementById('ocr-percentage-text').innerText = data.ocr_success_rate + '% Success';
+
+            // Render Status Chart (Bar)
+            renderStatusChart(data.appointments_by_status);
+            
+            // Render OCR Chart (Doughnut)
+            renderOcrChart(data.ocr_success_rate);
+
+        } catch (err) {
+            console.error("Failed to load analytics: ", err);
+            document.getElementById('metric-appointments').innerText = "Error";
+            document.getElementById('metric-revenue').innerText = "Error";
+            document.getElementById('metric-patients').innerText = "Error";
+            document.getElementById('metric-doctors').innerText = "Error";
+            document.getElementById('ocr-percentage-text').innerText = "Failed to load";
+        }
+    }
+
+    function renderStatusChart(statusData) {
+        const ctx = document.getElementById('appointmentsChart').getContext('2d');
+        if (statusChartInstance) statusChartInstance.destroy();
+        
+        const labels = Object.keys(statusData).map(k => k.toUpperCase());
+        const values = Object.values(statusData);
+
+        statusChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '# of Appointments',
+                    data: values,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(255, 99, 132, 0.6)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+
+    function renderOcrChart(successRate) {
+        const ctx = document.getElementById('ocrChart').getContext('2d');
+        if (ocrChartInstance) ocrChartInstance.destroy();
+        
+        ocrChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Success', 'Failed'],
+                datasets: [{
+                    data: [successRate, 100 - successRate],
+                    backgroundColor: ['#198754', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // Auto-load on mount
+    document.addEventListener("DOMContentLoaded", fetchAnalytics);
+</script>
+{% endblock %}

@@ -19,6 +19,8 @@ urlpatterns = [
     path('billing/', include('billing.urls')),
     path('ehr/', include('ehr.urls')),
     path('api/v1/', include('api.v1.urls')),
+    path('analytics/', include('analytics.urls')),
+    path('enterprise/', include('enterprise.urls')),
 ]
 
 if settings.DEBUG:

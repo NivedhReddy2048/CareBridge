@@ -1,0 +1,69 @@
+{% extends 'enterprise/base_enterprise.html' %}
+
+{% block header_title %}Realtime System Monitoring (WebSockets){% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold text-uppercase text-muted">Live WebSocket Events</h6>
+                <span class="badge bg-success"><i class="fa-solid fa-circle-dot fa-fade me-1"></i> Live</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Event</th>
+                                <th>Recipient</th>
+                                <th>Message</th>
+                                <th class="text-end pe-4">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ws-events-table">
+                            {% for event in events %}
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-primary">{{ event.event_type }}</span>
+                                </td>
+                                <td class="fw-bold">{{ event.user.username|default:"System" }}</td>
+                                <td class="small text-muted">{{ event.payload|truncatechars:50 }}</td>
+                                <td class="text-end pe-4 small text-muted">{{ event.created_at|date:"H:i:s.u" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No recent events.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 class="fw-bold text-uppercase text-muted">Channels Health</h6>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <i class="fa-brands fa-redis text-danger mb-3" style="font-size: 4rem;"></i>
+                <h4 class="fw-bold">Redis Broker</h4>
+                <p class="text-success fw-bold"><i class="fa-solid fa-check-circle me-1"></i> Connected & Routing</p>
+                
+                <div class="w-100 mt-4 px-3">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Event Throughput</span>
+                        <span>Normal</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 25%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'enterprise/base_enterprise.html' %}
+
+{% block header_title %}OCR Processing Pipeline{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Task ID</th>
+                        <th>Method</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for metric in page_obj %}
+                    <tr>
+                        <td class="ps-4 text-muted font-monospace small">{{ metric.task_id|truncatechars:20|default:"N/A" }}</td>
+                        <td>
+                            {% if metric.ocr_method == 'PDF_TEXT' %}
+                                <span class="badge bg-primary"><i class="fa-solid fa-file-pdf me-1"></i> PDF Native</span>
+                            {% elif metric.ocr_method == 'OCR_IMAGE' %}
+                                <span class="badge bg-info text-dark"><i class="fa-solid fa-image me-1"></i> Image OCR</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="fa-solid fa-triangle-exclamation me-1"></i> Failed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-bold">{{ metric.duration_seconds|floatformat:2 }}s</span>
+                            {% if metric.duration_seconds > 5.0 %}
+                                <i class="fa-solid fa-fire text-danger ms-1" title="High processing time"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if metric.is_success %}
+                                <span class="text-success fw-bold"><i class="fa-solid fa-check"></i> Success</span>
+                            {% else %}
+                                <span class="text-danger fw-bold"><i class="fa-solid fa-xmark"></i> Error</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4 text-muted small">
+                            {{ metric.start_time|date:"M d, Y H:i:s" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No OCR metrics recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-center mt-4">
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+            {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+            {% endif %}
+            
+            <li class="page-item active"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+            
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

@@ -7,6 +7,7 @@ from api.v1.views.ehr_views import EHRViewSet
 from api.v1.views.appointment_views import AppointmentViewSet, DoctorViewSet
 from api.v1.views.billing_views import create_payment_session, verify_payment
 from api.v1.views.notification_views import NotificationViewSet
+from api.v1.views.analytics_views import AnalyticsOverviewView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
@@ -35,4 +36,7 @@ urlpatterns = [
     # Billing
     path('billing/create-order/', create_payment_session, name='api-billing-create-order'),
     path('billing/verify-payment/', verify_payment, name='api-billing-verify-payment'),
+    
+    # Analytics
+    path('analytics/overview/', AnalyticsOverviewView.as_view(), name='api-analytics-overview'),
 ]

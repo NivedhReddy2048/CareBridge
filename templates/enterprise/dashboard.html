@@ -1,0 +1,112 @@
+{% extends 'enterprise/base_enterprise.html' %}
+
+{% block header_title %}Operations Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Top Stats -->
+    <div class="col-md-3">
+        <div class="card stat-card bg-white h-100 border-start border-4 border-primary">
+            <div class="card-body">
+                <div class="text-muted small fw-bold text-uppercase mb-1">Total Users</div>
+                <h2 class="mb-0 fw-bold">{{ total_users }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card bg-white h-100 border-start border-4 border-success">
+            <div class="card-body">
+                <div class="text-muted small fw-bold text-uppercase mb-1">Total Revenue</div>
+                <h2 class="mb-0 fw-bold">${{ revenue|floatformat:2 }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card bg-white h-100 border-start border-4 border-info">
+            <div class="card-body">
+                <div class="text-muted small fw-bold text-uppercase mb-1">AI Success Rate</div>
+                <h2 class="mb-0 fw-bold">{{ ai_success_rate }}%</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card bg-white h-100 border-start border-4 border-warning">
+            <div class="card-body">
+                <div class="text-muted small fw-bold text-uppercase mb-1">Active WS Connections</div>
+                <h2 class="mb-0 fw-bold">{{ active_ws }} <i class="fa-solid fa-circle text-success ms-2 fs-6 pb-1"></i></h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 class="fw-bold text-uppercase text-muted">Platform Growth</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="growthChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 class="fw-bold text-uppercase text-muted">System Health</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Active Doctors
+                        <span class="badge bg-primary rounded-pill">{{ active_doctors }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Active Patients
+                        <span class="badge bg-info rounded-pill">{{ total_patients }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        Appointments Today
+                        <span class="badge bg-success rounded-pill">{{ appointments_today }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        OCR Failures
+                        <span class="badge bg-danger rounded-pill">{{ ocr_fails }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Appointments',
+                data: [12, 19, 15, 25, 22, 30, 28],
+                borderColor: '#0d6efd',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(13, 110, 253, 0.1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -71,6 +71,9 @@ class Doctor(models.Model):
         related_name='favorite_doctors', 
         blank=True
     )
+    
+    # Phase 6: Doctor Approvals
+    is_verified = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Dr. {self.user.last_name} ({self.specialization})"

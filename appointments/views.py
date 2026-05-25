@@ -249,6 +249,13 @@ def book_appointment_view(request):
         doctor = get_object_or_404(Doctor, id=doctor_id)
         appointment = Appointment.objects.create(patient=request.user, doctor=doctor, date=date, time=time, reason=reason, status='pending')
         
+        # Phase 6: AI Triage Estimation
+        try:
+            from analytics.services.triage_service import TriageEngine
+            TriageEngine.estimate_triage(symptoms=reason, patient=request.user, appointment=appointment)
+        except Exception as e:
+            logger.error(f"Failed to generate triage estimate: {e}")
+        
         # --- PHASE 3: Handle Optional EHR Upload ---
         ehr_file = request.FILES.get('ehr_file')
         if ehr_file:
