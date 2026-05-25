@@ -185,9 +185,142 @@
                       {% endif %}
 
                       <button class="btn btn-sm btn-light text-secondary border rounded-circle ms-1 hover-lift" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" data-bs-toggle="modal" data-bs-target="#patientModal{{ appointment.id }}" title="Patient Details"><i class="fa-solid fa-info"></i></button>
+                      
+                      <!-- Phase 3: AI Brief Button -->
+                      {% if appointment.ehr_links.exists %}
+                        <button class="btn btn-sm btn-warning text-dark border rounded-circle ms-1 hover-lift" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" data-bs-toggle="offcanvas" data-bs-target="#aiBrief{{ appointment.id }}" title="AI Patient Brief"><i class="fa-solid fa-brain"></i></button>
+                      {% endif %}
                     </div>
                   </td>
                 </tr>
+
+                <!-- Phase 3: AI Patient Brief Offcanvas -->
+                {% if appointment.ehr_links.exists %}
+                <div class="offcanvas offcanvas-end shadow" tabindex="-1" id="aiBrief{{ appointment.id }}" aria-labelledby="aiBriefLabel{{ appointment.id }}" style="width: 450px;">
+                  <div class="offcanvas-header bg-dark text-white">
+                    <h5 class="offcanvas-title fw-bold" id="aiBriefLabel{{ appointment.id }}">
+                        <i class="fa-solid fa-brain text-warning me-2"></i>AI Patient Brief
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                  </div>
+                  <div class="offcanvas-body p-4 bg-light">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                      {% if appointment.patient.profile_picture %}
+                        <img src="{{ appointment.patient.profile_picture.url }}" class="rounded-circle me-3 border" width="50" height="50" style="object-fit: cover;" />
+                      {% else %}
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3 border" style="width: 50px; height: 50px;">
+                          <i class="fa-solid fa-user"></i>
+                        </div>
+                      {% endif %}
+                      <div>
+                        <h5 class="fw-bold mb-0 text-dark">{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</h5>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2">Ready for Consultation</span>
+                      </div>
+                    </div>
+
+                    {% for link in appointment.ehr_links.all %}
+                        {% if link.ehr_record.attachments.first.ai_analysis %}
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <h6 class="fw-bold mb-0 text-primary">
+                                    <i class="fa-solid fa-file-medical me-2"></i>{{ link.ehr_record.title }}
+                                </h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="mb-3">
+                                    {% if link.ehr_record.attachments.first.ai_analysis.ai_summary.is_error %}
+                                        <div class="bg-warning bg-opacity-10 p-3 rounded-3 border border-warning border-opacity-25">
+                                            <span class="text-uppercase small fw-bold text-warning d-block mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i>Analysis Error</span>
+                                            <p class="mb-0 text-dark small" style="line-height: 1.6;">
+                                                {{ link.ehr_record.attachments.first.ai_analysis.ai_summary.summary }}
+                                            </p>
+                                        </div>
+                                    {% else %}
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-uppercase small fw-bold text-success d-block"><i class="fa-solid fa-brain me-1"></i>AI Summary</span>
+                                            <div>
+                                                {% if link.ehr_record.attachments.first.ai_analysis.ai_summary.extraction_method %}
+                                                <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-50 me-1" title="Extraction Method">{{ link.ehr_record.attachments.first.ai_analysis.ai_summary.extraction_method }}</span>
+                                                {% endif %}
+                                                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50" title="Confidence Score">{{ link.ehr_record.attachments.first.ai_analysis.confidence_score|floatformat:2 }} Conf</span>
+                                            </div>
+                                        </div>
+                                        <p class="mb-0 text-dark small p-3 bg-success bg-opacity-10 rounded-3 border border-success border-opacity-25" style="line-height: 1.6;">
+                                            {{ link.ehr_record.attachments.first.ai_analysis.ai_summary.summary }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if not link.ehr_record.attachments.first.ai_analysis.ai_summary.is_error %}
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <span class="text-uppercase small fw-bold text-muted d-block mb-2">Detected Conditions</span>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for condition in link.ehr_record.attachments.first.ai_analysis.identified_conditions %}
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">{{ condition|title }}</span>
+                                            {% empty %}
+                                                <span class="text-muted small">None detected</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <span class="text-uppercase small fw-bold text-muted d-block mb-2">Detected Medications</span>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for med in link.ehr_record.attachments.first.ai_analysis.extracted_medications %}
+                                                <span class="badge bg-info bg-opacity-10 text-dark border border-info border-opacity-25">{{ med|title }}</span>
+                                            {% empty %}
+                                                <span class="text-muted small">None detected</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Phase 3: Raw Text Preview Accordion for Doctor -->
+                                <div class="accordion accordion-flush mt-3 border rounded-3" id="accordionDocRawText{{ link.ehr_record.id }}">
+                                    <div class="accordion-item rounded-3">
+                                        <h2 class="accordion-header" id="headingDocRawText{{ link.ehr_record.id }}">
+                                            <button class="accordion-button collapsed py-2 small fw-bold bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDocRawText{{ link.ehr_record.id }}" aria-expanded="false" aria-controls="collapseDocRawText{{ link.ehr_record.id }}">
+                                                <i class="fa-solid fa-file-lines me-2 text-secondary"></i>View Raw OCR Text
+                                            </button>
+                                        </h2>
+                                        <div id="collapseDocRawText{{ link.ehr_record.id }}" class="accordion-collapse collapse" aria-labelledby="headingDocRawText{{ link.ehr_record.id }}" data-bs-parent="#accordionDocRawText{{ link.ehr_record.id }}">
+                                            <div class="accordion-body p-2 bg-white">
+                                                <div class="p-2 bg-light border rounded small font-monospace text-muted" style="max-height: 150px; overflow-y: auto; font-size: 0.75rem;">
+                                                    {{ link.ehr_record.attachments.first.ai_analysis.raw_extracted_text|linebreaksbr }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                                    <form method="POST" action="{% url 'reprocess_ehr' link.ehr_record.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-3" title="Retry AI OCR Analysis">
+                                            <i class="fa-solid fa-rotate me-1"></i>Reprocess
+                                        </button>
+                                    </form>
+                                    <a href="{% url 'view_ehr_document' link.ehr_record.attachments.first.id %}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
+                                        <i class="fa-solid fa-eye me-1"></i> View Original Document
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-body p-4 text-center">
+                                <div class="spinner-border text-warning spinner-border-sm mb-3" role="status"></div>
+                                <h6 class="fw-bold text-dark">Processing Document...</h6>
+                                <p class="small text-muted mb-0">AI is currently analyzing "{{ link.ehr_record.title }}". Please check back in a few seconds.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+
+                  </div>
+                </div>
+                {% endif %}
 
                 <div class="modal fade" id="patientModal{{ appointment.id }}" tabindex="-1" aria-hidden="true">
                   <div class="modal-dialog modal-dialog-centered modal-lg"> <div class="modal-content border-0 shadow">

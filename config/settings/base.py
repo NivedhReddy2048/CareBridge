@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'records',
     'dashboard',
     'billing',
+    'ehr',
+    'intelligence',
 ]
 
 MIDDLEWARE = [
@@ -146,6 +148,16 @@ DATABASES = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ==========================================
+# CELERY & REDIS
+# ==========================================
+CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
 
 # Billing & Payment (Razorpay)
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')

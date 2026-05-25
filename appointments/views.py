@@ -249,6 +249,34 @@ def book_appointment_view(request):
         doctor = get_object_or_404(Doctor, id=doctor_id)
         appointment = Appointment.objects.create(patient=request.user, doctor=doctor, date=date, time=time, reason=reason, status='pending')
         
+        # --- PHASE 3: Handle Optional EHR Upload ---
+        ehr_file = request.FILES.get('ehr_file')
+        if ehr_file:
+            from ehr.models import EHRRecord, DocumentAttachment, AppointmentEHRLink, AuditLog
+            record = EHRRecord.objects.create(
+                patient=request.user,
+                title=f"Record for Visit {date}",
+                record_type="general",
+                date_of_record=date,
+                notes=reason
+            )
+            attachment = DocumentAttachment.objects.create(
+                ehr_record=record,
+                file=ehr_file,
+                file_type=ehr_file.content_type if hasattr(ehr_file, 'content_type') else None
+            )
+            AppointmentEHRLink.objects.create(
+                appointment=appointment,
+                ehr_record=record,
+                doctor_permission_granted=True
+            )
+            AuditLog.objects.create(
+                user=request.user,
+                ehr_record=record,
+                action="UPLOADED_DURING_BOOKING",
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+        
         send_notification(doctor.user, f"New Request: {request.user.first_name} for {date} at {time}", 'appointment')
         
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':

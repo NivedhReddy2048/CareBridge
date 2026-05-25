@@ -1,0 +1,63 @@
+<!-- EHR Upload Modal -->
+<div class="modal fade" id="ehrUploadModal" tabindex="-1" aria-labelledby="ehrUploadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="ehrUploadModalLabel">Upload Medical Record</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form action="{% url 'upload_ehr' %}" method="POST" enctype="multipart/form-data" id="ehrUploadForm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold">Document Title</label>
+                <input type="text" name="title" class="form-control rounded-3" required placeholder="e.g. Blood Test Result">
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-muted small fw-bold">Record Type</label>
+                    <select name="record_type" class="form-select rounded-3">
+                        <option value="lab_report">Lab Report</option>
+                        <option value="prescription">Prescription</option>
+                        <option value="scan">Medical Scan</option>
+                        <option value="blood_report">Blood Report</option>
+                        <option value="general">General Record</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label text-muted small fw-bold">Date of Record</label>
+                    <input type="date" name="date_of_record" class="form-control rounded-3" required>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold">File (PDF/Image)</label>
+                <input type="file" name="file" class="form-control rounded-3" accept=".pdf,image/*" required>
+                <div class="form-text mt-2 small text-secondary bg-light p-2 rounded border">
+                    <strong>For best AI analysis, upload:</strong>
+                    <ul class="mb-1 ps-3 mt-1">
+                        <li>JPG/PNG medical scans</li>
+                        <li>Text-based PDFs</li>
+                    </ul>
+                    <span class="text-warning" style="font-size: 0.8em;"><i class="fa-solid fa-triangle-exclamation me-1"></i>Scanned PDFs may require advanced OCR support.</span>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label text-muted small fw-bold">Additional Notes (Optional)</label>
+                <textarea name="notes" class="form-control rounded-3" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn btn-success w-100 rounded-pill fw-bold py-2 shadow-sm" id="uploadEhrBtn">
+                <i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload Record
+            </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('ehrUploadForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('uploadEhrBtn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Uploading...';
+    btn.disabled = true;
+});
+</script>

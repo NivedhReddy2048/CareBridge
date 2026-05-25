@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="fa-solid fa-file-medical text-success me-2"></i>My Medical Records</h2>
+            <p class="text-muted">Manage your uploaded lab reports, scans, and AI insights.</p>
+        </div>
+        <button class="btn btn-success rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#ehrUploadModal">
+            <i class="fa-solid fa-cloud-arrow-up me-2"></i>Upload Record
+        </button>
+    </div>
+
+    <div class="row g-4">
+        {% for record in records %}
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-dark">{{ record.title }}</h5>
+                    <span class="badge bg-light text-secondary border">{{ record.get_record_type_display }}</span>
+                </div>
+                <div class="card-body p-4 d-flex flex-column">
+                    <p class="small text-muted mb-3"><i class="fa-solid fa-calendar-day me-2"></i>{{ record.date_of_record }}</p>
+                    
+                    {% if record.notes %}
+                    <p class="small text-dark mb-3"><strong>Notes:</strong> {{ record.notes }}</p>
+                    {% endif %}
+
+                    {% with attachment=record.attachments.first %}
+                        {% if attachment %}
+                            {% if attachment.ai_analysis %}
+                                {% if attachment.ai_analysis.ai_summary.is_error %}
+                                    <div class="bg-warning bg-opacity-10 p-3 rounded-3 mb-3 border border-warning border-opacity-25 flex-grow-1">
+                                        <h6 class="fw-bold text-warning small text-uppercase mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i>Analysis Failed</h6>
+                                        <p class="small text-dark mb-0">{{ attachment.ai_analysis.ai_summary.summary }}</p>
+                                    </div>
+                                {% else %}
+                                    <div class="bg-success bg-opacity-10 p-3 rounded-3 mb-3 border border-success border-opacity-25 flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold text-success small text-uppercase mb-0"><i class="fa-solid fa-brain me-1"></i>AI Summary</h6>
+                                            <div>
+                                                {% if attachment.ai_analysis.ai_summary.extraction_method %}
+                                                <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-50 me-1" title="Extraction Method">{{ attachment.ai_analysis.ai_summary.extraction_method }}</span>
+                                                {% endif %}
+                                                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50" title="Confidence Score">{{ attachment.ai_analysis.confidence_score|floatformat:2 }} Conf</span>
+                                            </div>
+                                        </div>
+                                        <p class="small text-dark mb-0">{{ attachment.ai_analysis.ai_summary.summary }}</p>
+                                    </div>
+                                    {% if attachment.ai_analysis.identified_conditions %}
+                                    <div class="mb-3">
+                                        <span class="small text-muted fw-bold text-uppercase d-block mb-1">Detected Conditions</span>
+                                        {% for condition in attachment.ai_analysis.identified_conditions %}
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">{{ condition|title }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    {% if attachment.ai_analysis.extracted_medications %}
+                                    <div class="mb-3">
+                                        <span class="small text-muted fw-bold text-uppercase d-block mb-1">Detected Medications</span>
+                                        {% for med in attachment.ai_analysis.extracted_medications %}
+                                            <span class="badge bg-info bg-opacity-10 text-dark border border-info border-opacity-25">{{ med|title }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+
+                                <!-- Phase 3: Raw Text Preview Accordion -->
+                                <div class="accordion accordion-flush mb-3 border rounded-3" id="accordionRawText{{ attachment.id }}">
+                                    <div class="accordion-item rounded-3">
+                                        <h2 class="accordion-header" id="headingRawText{{ attachment.id }}">
+                                            <button class="accordion-button collapsed py-2 small fw-bold bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRawText{{ attachment.id }}" aria-expanded="false" aria-controls="collapseRawText{{ attachment.id }}">
+                                                <i class="fa-solid fa-file-lines me-2 text-secondary"></i>View Extracted Text
+                                            </button>
+                                        </h2>
+                                        <div id="collapseRawText{{ attachment.id }}" class="accordion-collapse collapse" aria-labelledby="headingRawText{{ attachment.id }}" data-bs-parent="#accordionRawText{{ attachment.id }}">
+                                            <div class="accordion-body p-2 bg-white">
+                                                <div class="p-2 bg-light border rounded small font-monospace text-muted" style="max-height: 150px; overflow-y: auto; font-size: 0.75rem;">
+                                                    {{ attachment.ai_analysis.raw_extracted_text|linebreaksbr }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="bg-light p-3 rounded-3 mb-3 text-center flex-grow-1">
+                                    <div class="spinner-border spinner-border-sm text-warning mb-2" role="status"></div>
+                                    <p class="small text-muted mb-0">AI is currently analyzing this document via OCR...</p>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="d-flex justify-content-between border-top pt-3 mt-auto">
+                                <form method="POST" action="{% url 'reprocess_ehr' record.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-3 me-2" title="Retry AI OCR Analysis">
+                                        <i class="fa-solid fa-rotate me-1"></i>Reprocess
+                                    </button>
+                                </form>
+                                <a href="{% url 'view_ehr_document' attachment.id %}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    <i class="fa-solid fa-eye me-1"></i>View File
+                                </a>
+                                <form method="POST" action="{% url 'delete_ehr' record.id %}" onsubmit="return confirm('Are you sure you want to delete this record?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                        <i class="fa-solid fa-trash me-1"></i>Delete
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <div class="flex-grow-1">
+                                <p class="text-danger small">No file attached.</p>
+                            </div>
+                            <form method="POST" action="{% url 'delete_ehr' record.id %}" onsubmit="return confirm('Are you sure you want to delete this record?');" class="mt-auto border-top pt-3">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                    <i class="fa-solid fa-trash me-1"></i>Delete
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="fa-solid fa-folder-open fa-4x text-muted opacity-25 mb-3"></i>
+            <h4 class="fw-bold text-dark">No Medical Records</h4>
+            <p class="text-muted">You haven't uploaded any lab reports or scans yet.</p>
+            <button class="btn btn-success rounded-pill px-4 mt-2" data-bs-toggle="modal" data-bs-target="#ehrUploadModal">
+                Upload Your First Record
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% include 'ehr/upload_modal.html' %}
+{% endblock %}
