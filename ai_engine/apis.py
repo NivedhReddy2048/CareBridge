@@ -12,8 +12,10 @@ from ai_engine.throttles import AIHeavyThrottle, AIChatThrottle
 class TriageAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [AIHeavyThrottle]
+    from ai_engine.serializers import TriageRequestSerializer
+    serializer_class = TriageRequestSerializer
 
-    @extend_schema(request={'type': 'object', 'properties': {'symptoms': {'type': 'string'}}})
+    @extend_schema(request=TriageRequestSerializer)
     def post(self, request):
         symptoms = request.data.get('symptoms')
         if not symptoms:
@@ -30,8 +32,10 @@ class TriageAPIView(APIView):
 class SummarizeReportAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [AIHeavyThrottle]
+    from ai_engine.serializers import SummarizeReportRequestSerializer
+    serializer_class = SummarizeReportRequestSerializer
 
-    @extend_schema(request={'type': 'object', 'properties': {'ehr_record_id': {'type': 'integer'}, 'raw_text': {'type': 'string'}}})
+    @extend_schema(request=SummarizeReportRequestSerializer)
     def post(self, request):
         record_id = request.data.get('ehr_record_id')
         raw_text = request.data.get('raw_text', '')
@@ -53,8 +57,10 @@ class SummarizeReportAPIView(APIView):
 class RecommendDoctorsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [AIHeavyThrottle]
+    from ai_engine.serializers import RecommendDoctorsRequestSerializer
+    serializer_class = RecommendDoctorsRequestSerializer
 
-    @extend_schema(request={'type': 'object', 'properties': {'triage_result': {'type': 'object'}}})
+    @extend_schema(request=RecommendDoctorsRequestSerializer)
     def post(self, request):
         triage_result = request.data.get('triage_result', {})
         try:
@@ -66,8 +72,10 @@ class RecommendDoctorsAPIView(APIView):
 class ChatbotAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [AIChatThrottle]
+    from ai_engine.serializers import ChatbotRequestSerializer
+    serializer_class = ChatbotRequestSerializer
 
-    @extend_schema(request={'type': 'object', 'properties': {'message': {'type': 'string'}, 'conversation_id': {'type': 'integer'}}})
+    @extend_schema(request=ChatbotRequestSerializer)
     def post(self, request):
         user_message = request.data.get('message', '')
         if len(user_message) > 500:

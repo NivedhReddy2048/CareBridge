@@ -1,34 +1,53 @@
-# Use official Python runtime as a parent image
-FROM python:3.11-slim-bookworm
+# Stage 1: Build
+FROM python:3.11-slim as builder
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    DJANGO_SETTINGS_MODULE=config.settings.production
-
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Install system dependencies for build
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
-    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements/ /app/requirements/
-RUN pip install --upgrade pip && \
-    pip install -r requirements/production.txt
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements/production.txt -r requirements/base.txt
 
-# Copy project
+# Stage 2: Runtime
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN addgroup --system appgroup && adduser --system --group appuser
+
+# Install wheels from builder
+COPY --from=builder /app/wheels /wheels
+COPY --from=builder /app/requirements /app/requirements
+RUN pip install --no-cache /wheels/*
+
+# Copy project files
 COPY . /app/
 
-# Collect static files
-# RUN python manage.py collectstatic --noinput
+# Set ownership
+RUN chown -R appuser:appgroup /app
 
-# Expose port
+USER appuser
+
 EXPOSE 8000
 
-# Start command
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]

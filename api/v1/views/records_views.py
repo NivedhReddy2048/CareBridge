@@ -4,10 +4,14 @@ from rest_framework import permissions, status
 from django.shortcuts import get_object_or_404, redirect
 from django.core.cache import cache
 from ehr.models import EHRRecord, DocumentAttachment, AuditLog
+from drf_spectacular.utils import extend_schema
 
 class SecureDownloadAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    from rest_framework import serializers
+    serializer_class = serializers.Serializer
 
+    @extend_schema(responses={302: None})
     def get(self, request, pk):
         record = get_object_or_404(EHRRecord, pk=pk)
         

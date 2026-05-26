@@ -1,0 +1,148 @@
+{% extends "enterprise/base_enterprise.html" %}
+{% block title %}System Monitoring - CareBridge{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0"><i class="fa-solid fa-server text-primary me-2"></i> System & CI/CD Health</h2>
+    <div>
+        <span class="badge bg-success px-3 py-2">Production Metrics Active</span>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Infrastructure Health -->
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary h-100 shadow-sm">
+            <div class="card-header border-secondary bg-transparent py-3">
+                <h5 class="mb-0 fw-bold">Infrastructure State</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-transparent border-secondary d-flex justify-content-between align-items-center py-3">
+                        <span class="text-white"><i class="fa-solid fa-database me-2 text-info"></i>PostgreSQL Database</span>
+                        {% if db_status == 'Healthy' %}
+                            <span class="badge bg-success rounded-pill">Healthy</span>
+                        {% else %}
+                            <span class="badge bg-danger rounded-pill">Offline</span>
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item bg-transparent border-secondary d-flex justify-content-between align-items-center py-3">
+                        <span class="text-white"><i class="fa-solid fa-memory me-2 text-warning"></i>Redis Cache</span>
+                        {% if redis_status == 'Healthy' %}
+                            <span class="badge bg-success rounded-pill">Healthy</span>
+                        {% else %}
+                            <span class="badge bg-danger rounded-pill">Unreachable</span>
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item bg-transparent border-secondary d-flex justify-content-between align-items-center py-3">
+                        <span class="text-white"><i class="fa-solid fa-network-wired me-2 text-info"></i>Celery Broker</span>
+                        {% if celery_status == 'Healthy' %}
+                            <span class="badge bg-success rounded-pill">Healthy</span>
+                        {% elif celery_status == 'Missing Config' %}
+                            <span class="badge bg-warning rounded-pill">Missing Config</span>
+                        {% else %}
+                            <span class="badge bg-danger rounded-pill">Offline</span>
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item bg-transparent border-secondary d-flex justify-content-between align-items-center py-3">
+                        <span class="text-white"><i class="fa-solid fa-bolt me-2 text-primary"></i>Daphne ASGI Server</span>
+                        <span class="badge bg-success rounded-pill">Running</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Node Metrics -->
+    <div class="col-md-6">
+        <div class="card bg-dark border-secondary h-100 shadow-sm">
+            <div class="card-header border-secondary bg-transparent py-3">
+                <h5 class="mb-0 fw-bold">Node Hardware Utilization</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small fw-bold text-uppercase">CPU Usage</span>
+                        <span class="text-white fw-bold">{{ cpu_percent }}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px; background-color: #2b3035;">
+                        <div class="progress-bar {% if cpu_percent > 85 %}bg-danger{% elif cpu_percent > 60 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ cpu_percent }}%"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small fw-bold text-uppercase">Memory Usage</span>
+                        <span class="text-white fw-bold">{{ memory_percent }}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px; background-color: #2b3035;">
+                        <div class="progress-bar {% if memory_percent > 85 %}bg-danger{% elif memory_percent > 60 %}bg-warning{% else %}bg-info{% endif %}" role="progressbar" style="width: {{ memory_percent }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deployment Meta -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card bg-dark border-secondary shadow-sm">
+            <div class="card-header border-secondary bg-transparent py-3">
+                <h5 class="mb-0 fw-bold">Container & CI/CD Metadata</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 border-end border-secondary">
+                        <p class="text-muted small text-uppercase mb-1">Environment</p>
+                        <h5 class="text-white mb-0">Production (Docker)</h5>
+                    </div>
+                    <div class="col-md-3 border-end border-secondary">
+                        <p class="text-muted small text-uppercase mb-1">Render Service</p>
+                        <h5 class="text-white mb-0">{{ render_service }}</h5>
+                    </div>
+                    <div class="col-md-3 border-end border-secondary">
+                        <p class="text-muted small text-uppercase mb-1">Instance ID</p>
+                        <h5 class="text-info mb-0" style="font-family: monospace;">{{ render_instance|truncatechars:15 }}</h5>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="text-muted small text-uppercase mb-1">Sentry Error Tracking</p>
+                        <h5 class="text-success mb-0">Active</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Operational Observability -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card bg-dark border-secondary shadow-sm">
+            <div class="card-header border-secondary bg-transparent py-3">
+                <h5 class="mb-0 fw-bold">Operational Observability</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 border-end border-secondary">
+                        <p class="text-muted small text-uppercase mb-1">Active WebSockets</p>
+                        <h5 class="text-white mb-0">{{ websocket_connections }}</h5>
+                    </div>
+                    <div class="col-md-3 border-end border-secondary">
+                        <p class="text-muted small text-uppercase mb-1">Queue Backlog</p>
+                        <h5 class="text-white mb-0">{{ queue_backlog }}</h5>
+                    </div>
+                    <div class="col-md-3 border-end border-secondary">
+                        <p class="text-muted small text-uppercase mb-1">Failed Tasks</p>
+                        <h5 class="{% if failed_tasks > 0 %}text-danger{% else %}text-success{% endif %} mb-0">{{ failed_tasks }}</h5>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="text-muted small text-uppercase mb-1">API Rate Limit Hits</p>
+                        <h5 class="text-warning mb-0">{{ api_rate_limit_hits }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

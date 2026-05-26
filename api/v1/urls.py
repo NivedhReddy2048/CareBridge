@@ -42,4 +42,7 @@ urlpatterns = [
     
     # Secure Records
     path('records/download/<int:pk>/', __import__('api.v1.views.records_views', fromlist=['']).SecureDownloadAPIView.as_view(), name='api-records-download'),
+    
+    # System
+    path('health/', __import__('api.v1.views.system_views', fromlist=['']).HealthCheckView.as_view(), name='api-health-check'),
 ]

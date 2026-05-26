@@ -1,23 +1,131 @@
-databases:
-  - name: carebridge-db
-    databaseName: carebridge
-    user: carebridge_user
+services:
+  # PostgreSQL Database
+  - type: pgo
+    name: carebridge-db
+    plan: free
+    
+  # Redis
+  - type: redis
+    name: carebridge-redis
     plan: free
 
-services:
+  # Web Service (Django/Daphne)
   - type: web
     name: carebridge-web
-    env: python
-    buildCommand: "./build.sh"
-    startCommand: "gunicorn config.wsgi:application"
+    env: docker
+    plan: starter
+    healthCheckPath: /api/v1/health/
     envVars:
-      - key: DATABASE_URL
+      - key: DJANGO_ENV
+        value: production
+      - key: DB_HOST
         fromDatabase:
           name: carebridge-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: carebridge-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: carebridge-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: carebridge-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: carebridge-db
+          property: password
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: carebridge-redis
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
-      - key: DJANGO_SETTINGS_MODULE
-        value: config.settings.production
-      - key: PYTHON_VERSION
-        value: 3.11.0
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost"
+    
+  # Celery Worker
+  - type: worker
+    name: carebridge-worker
+    env: docker
+    plan: starter
+    dockerCommand: celery -A config worker -l info
+    envVars:
+      - key: DJANGO_ENV
+        value: production
+      - key: DB_HOST
+        fromDatabase:
+          name: carebridge-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: carebridge-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: carebridge-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: carebridge-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: carebridge-db
+          property: password
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: carebridge-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: carebridge-web
+          envVarKey: SECRET_KEY
+
+  # Celery Beat
+  - type: worker
+    name: carebridge-beat
+    env: docker
+    plan: starter
+    dockerCommand: celery -A config beat -l info
+    envVars:
+      - key: DJANGO_ENV
+        value: production
+      - key: DB_HOST
+        fromDatabase:
+          name: carebridge-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: carebridge-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: carebridge-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: carebridge-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: carebridge-db
+          property: password
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: carebridge-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: carebridge-web
+          envVarKey: SECRET_KEY

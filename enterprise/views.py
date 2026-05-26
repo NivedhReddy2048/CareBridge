@@ -202,3 +202,67 @@ def storage_monitoring(request):
         'top_uploaders': top_uploaders
     }
     return render(request, 'enterprise/storage_monitoring.html', context)
+
+@enterprise_admin_required
+def system_monitoring(request):
+    import os
+    import psutil
+    from django.db import connections
+    from django.db.utils import OperationalError
+    from django.core.cache import cache
+
+    # Check DB
+    db_status = "Healthy"
+    try:
+        c = connections['default'].cursor()
+        c.execute("SELECT 1")
+    except OperationalError:
+        db_status = "Down"
+
+    # Check Redis
+    redis_status = "Healthy"
+    try:
+        cache.set('sys_health_check', 'ok', timeout=1)
+        if cache.get('sys_health_check') != 'ok':
+            redis_status = "Mismatch"
+    except Exception:
+        redis_status = "Down"
+
+    # Check Celery
+    celery_status = "Healthy"
+    try:
+        broker_url = os.environ.get('REDIS_URL')
+        if not broker_url:
+            celery_status = "Missing Config"
+    except Exception:
+        celery_status = "Down"
+
+    # System Metrics
+    cpu_percent = psutil.cpu_percent(interval=0.1)
+    memory = psutil.virtual_memory()
+    memory_percent = memory.percent
+    
+    # Deployment metadata (rendered from env in render)
+    render_service = os.environ.get("RENDER_SERVICE_NAME", "Local / Unknown")
+    render_instance = os.environ.get("RENDER_INSTANCE_ID", "N/A")
+
+    # Observability Metrics (approximations for dashboard)
+    websocket_connections = cache.get('active_websockets', 0)
+    queue_backlog = cache.get('celery_queue_backlog', 0)
+    failed_tasks = cache.get('celery_failed_tasks', 0)
+    api_rate_limit_hits = cache.get('api_rate_limit_hits', 0)
+
+    context = {
+        'db_status': db_status,
+        'redis_status': redis_status,
+        'celery_status': celery_status,
+        'cpu_percent': cpu_percent,
+        'memory_percent': memory_percent,
+        'render_service': render_service,
+        'render_instance': render_instance,
+        'websocket_connections': websocket_connections,
+        'queue_backlog': queue_backlog,
+        'failed_tasks': failed_tasks,
+        'api_rate_limit_hits': api_rate_limit_hits,
+    }
+    return render(request, 'enterprise/system_monitoring.html', context)
