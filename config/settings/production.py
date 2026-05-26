@@ -39,7 +39,8 @@ SECURE_HSTS_PRELOAD = True
 
 # Database Configuration (PostgreSQL)
 # dj_database_url will automatically look for DATABASE_URL environment variable
-db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=True)
+ssl_require = os.getenv('DB_SSL_REQUIRE', 'True') == 'True' if not DEBUG else False
+db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=ssl_require)
 if db_from_env:
     DATABASES['default'].update(db_from_env)
 
