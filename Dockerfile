@@ -41,6 +41,9 @@ RUN pip install --no-cache /wheels/*
 # Copy project files
 COPY . /app/
 
+# Make entrypoint.sh executable
+RUN chmod +x /app/entrypoint.sh
+
 # Set ownership
 RUN chown -R appuser:appgroup /app
 
