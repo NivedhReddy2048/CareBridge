@@ -168,3 +168,37 @@ def ai_engine_dashboard(request):
         'fallback_rate': fallback_rate,
         'avg_latency': int(avg_latency)
     })
+
+@enterprise_admin_required
+def storage_monitoring(request):
+    from ehr.models import DocumentAttachment, AuditLog
+    from records.models import MalwareScanLog
+    from django.db.models import Sum, Count
+
+    # Total uploads
+    total_uploads = DocumentAttachment.objects.count()
+
+    # Storage consumed (sum of file sizes, approximation)
+    # Since we can't efficiently sum file sizes across S3, we would ideally store size on DB.
+    # For now, we will leave it as placeholder "Calculated async" or estimate it.
+    storage_consumed_mb = 0
+
+    # Scans
+    infected_count = MalwareScanLog.objects.filter(status='INFECTED').count()
+    failed_scans = MalwareScanLog.objects.filter(status='FAILED').count()
+
+    # Recent downloads
+    recent_downloads = AuditLog.objects.filter(action='DOWNLOADED_ATTACHMENT').order_by('-timestamp')[:50]
+
+    # Top uploaders
+    top_uploaders = DocumentAttachment.objects.values('ehr_record__patient__username').annotate(upload_count=Count('id')).order_by('-upload_count')[:10]
+
+    context = {
+        'total_uploads': total_uploads,
+        'storage_consumed_mb': storage_consumed_mb,
+        'infected_count': infected_count,
+        'failed_scans': failed_scans,
+        'recent_downloads': recent_downloads,
+        'top_uploaders': top_uploaders
+    }
+    return render(request, 'enterprise/storage_monitoring.html', context)

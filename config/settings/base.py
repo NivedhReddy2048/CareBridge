@@ -253,3 +253,18 @@ else:
             "BACKEND": "channels.layers.InMemoryChannelLayer"
         }
     }
+
+# ==========================================
+# PHASE 8: Secure Cloud Storage (AWS S3)
+# ==========================================
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+AWS_QUERYSTRING_EXPIRE = int(os.environ.get('AWS_QUERYSTRING_EXPIRE', 300))
+
+if AWS_STORAGE_BUCKET_NAME:
+    DEFAULT_FILE_STORAGE = 'records.storage_backends.PrivateMediaStorage'
+    # Optional: We only use S3 for PrivateMediaStorage right now, so we keep static local
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'

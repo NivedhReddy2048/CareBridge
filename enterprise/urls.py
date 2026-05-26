@@ -15,4 +15,5 @@ urlpatterns = [
     path('audit-logs/', views.audit_logs, name='audit_logs'),
     path('realtime/', views.realtime_monitoring, name='realtime_monitoring'),
     path('ai-engine/', views.ai_engine_dashboard, name='ai_engine_dashboard'),
+    path('storage-monitoring/', views.storage_monitoring, name='storage_monitoring'),
 ]

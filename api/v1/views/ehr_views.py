@@ -31,6 +31,18 @@ class EHRViewSet(viewsets.ModelViewSet):
     def upload(self, request):
         serializer = EHRUploadSerializer(data=request.data)
         if serializer.is_valid():
+            uploaded_file = serializer.validated_data['file']
+            
+            # Phase 8: Secure Validation
+            try:
+                from records.services.file_security_service import FileSecurityService
+                validation_result = FileSecurityService.validate_upload(uploaded_file)
+                # Overwrite filename safely
+                uploaded_file.name = validation_result['secure_filename']
+            except Exception as e:
+                # Catch ValidationError or others and return safe 400
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
             # Create Record
             record = EHRRecord.objects.create(
                 patient=request.user,
@@ -39,15 +51,24 @@ class EHRViewSet(viewsets.ModelViewSet):
                 date_of_record=serializer.validated_data['date_of_record'],
                 notes=serializer.validated_data.get('notes', '')
             )
-            # Create Attachment (this triggers Celery AI processing via signals)
-            DocumentAttachment.objects.create(
+            # Create Attachment
+            attachment = DocumentAttachment.objects.create(
                 ehr_record=record,
-                file=serializer.validated_data['file']
+                file=uploaded_file,
+                file_type=validation_result.get('mime_type')
             )
+            
+            # Phase 8: Trigger Malware Scan Asynchronously
+            # Currently synchronous for MVP but async-ready
+            FileSecurityService.scan_file(record, uploaded_file)
+            
             # Audit log
-            AuditLog.objects.create(
-                record=record,
-                accessed_by=request.user,
+            # Since we imported AuditLog from ehr.models, wait... it was originally created as AuditLog in ehr.models but missing some fields.
+            # No, looking at ehr.models.py AuditLog, it expects `user`, `ehr_record`, `action`
+            from ehr.models import AuditLog as EHRAuditLog
+            EHRAuditLog.objects.create(
+                ehr_record=record,
+                user=request.user,
                 action='UPLOAD',
                 ip_address=request.META.get('REMOTE_ADDR')
             )
