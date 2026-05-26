@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'enterprise',
     'telemedicine',
     'clinical_intelligence',
+    'ai_orchestration',
     'ai_engine',
 ]
 

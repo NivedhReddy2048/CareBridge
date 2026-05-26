@@ -285,3 +285,30 @@ def telemedicine_monitoring(request):
         'recent_events': recent_events
     }
     return render(request, 'enterprise/telemedicine_monitoring.html', context)
+
+@enterprise_admin_required
+def ai_workers_dashboard(request):
+    from ai_orchestration.models import AIProcessingJob, AIProcessingResult, AIInferenceEvent
+    from django.db.models import Sum, Avg, Count
+    
+    total_jobs = AIProcessingJob.objects.count()
+    failed_jobs = AIProcessingJob.objects.filter(status='FAILED').count()
+    processing_jobs = AIProcessingJob.objects.filter(status='PROCESSING').count()
+    
+    # Aggregations
+    tokens_stats = AIProcessingResult.objects.aggregate(total=Sum('tokens_used'))
+    total_tokens = tokens_stats['total'] or 0
+    
+    avg_latency = AIProcessingResult.objects.aggregate(avg=Avg('latency_ms'))['avg'] or 0
+    
+    recent_jobs = AIProcessingJob.objects.select_related('result', 'session').order_by('-created_at')[:50]
+    
+    context = {
+        'total_jobs': total_jobs,
+        'failed_jobs': failed_jobs,
+        'processing_jobs': processing_jobs,
+        'total_tokens': total_tokens,
+        'avg_latency': avg_latency,
+        'recent_jobs': recent_jobs
+    }
+    return render(request, 'enterprise/ai_workers_dashboard.html', context)

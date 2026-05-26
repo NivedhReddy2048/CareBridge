@@ -68,6 +68,13 @@ class TelemedicineConsumer(AsyncWebsocketConsumer):
             # Save the event if it's chat or signal
             if event_type in ['CHAT', 'SIGNAL']:
                 await self.save_event(event_type, payload)
+                
+            if event_type == 'CHAT':
+                # Fire async Celery task to process intelligence without blocking websocket
+                from ai_orchestration.tasks import process_consultation_intelligence
+                # In async context, we must use sync_to_async to call delay
+                from asgiref.sync import sync_to_async
+                await sync_to_async(process_consultation_intelligence.delay)(self.room_id)
             
             # Broadcast to everyone else in the room
             await self.channel_layer.group_send(
