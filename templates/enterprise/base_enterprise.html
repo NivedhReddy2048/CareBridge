@@ -112,6 +112,11 @@
                     <i class="fa-solid fa-shield-halved"></i> Audit Logs
                 </a>
             </li>
+            <li>
+                <a href="{% url 'enterprise:ai_engine_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'ai_engine_dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-microchip"></i> AI Engine
+                </a>
+            </li>
         </ul>
         <hr class="border-secondary">
         <div class="p-3">

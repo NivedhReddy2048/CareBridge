@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'notifications',
     'analytics',
     'enterprise',
+    'ai_engine',
 ]
 
 MIDDLEWARE = [
@@ -192,7 +193,10 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
-        'user': '1000/day'
+        'user': '1000/day',
+        'ai_heavy': '50/day',
+        'ai_chat': '200/day',
+        'ai_anon': '10/day',
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,

@@ -96,6 +96,11 @@
                                         <i class="fa-solid fa-rotate me-1"></i>Reprocess
                                     </button>
                                 </form>
+                                {% if attachment.ai_analysis %}
+                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 me-2" onclick="fetchAiSummary({{ record.id }}, `{{ attachment.ai_analysis.raw_extracted_text|escapejs }}`)">
+                                    <i class="fa-solid fa-sparkles me-1"></i>AI Summary
+                                </button>
+                                {% endif %}
                                 <a href="{% url 'view_ehr_document' attachment.id %}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                     <i class="fa-solid fa-eye me-1"></i>View File
                                 </a>

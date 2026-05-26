@@ -27,10 +27,115 @@
                     </div>
                     {% else %}
                     <div class="mb-4">
-                        <a href="{% url 'symptom_check' %}" class="btn btn-outline-primary btn-sm rounded-pill w-100 py-2 border-dashed">
-                            <i class="fa-solid fa-wand-magic-sparkles me-2"></i> Not sure whom to consult? <strong>Use AI Symptom Checker</strong>
-                        </a>
+                        <div class="card border-info bg-info bg-opacity-10 shadow-sm rounded-3">
+                            <div class="card-body p-3">
+                                <h6 class="fw-bold text-info-emphasis mb-2"><i class="fa-solid fa-brain me-2"></i>AI Symptom Triage</h6>
+                                <p class="small text-muted mb-2">Describe your symptoms to get instant AI triage and doctor recommendations.</p>
+                                <div class="input-group">
+                                    <input type="text" id="aiTriageInput" class="form-control form-control-sm border-info" placeholder="e.g. Severe chest pain and shortness of breath">
+                                    <button type="button" class="btn btn-info btn-sm text-white fw-bold px-3" onclick="runAiTriage()" id="btnAiTriage">Analyze</button>
+                                </div>
+                                <div id="aiTriageResult" class="mt-3" style="display: none;"></div>
+                            </div>
+                        </div>
                     </div>
+                    
+                    <script>
+                    function runAiTriage() {
+                        const input = document.getElementById('aiTriageInput').value;
+                        if(!input) return;
+                        
+                        const btn = document.getElementById('btnAiTriage');
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                        btn.disabled = true;
+                        
+                        fetch('/api/v1/ai/triage/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            },
+                            body: JSON.stringify({symptoms: input})
+                        })
+                        .then(res => res.json())
+                        .then(triageData => {
+                            // Automatically trigger recommend-doctors based on triage
+                            return fetch('/api/v1/ai/recommend-doctors/', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                                },
+                                body: JSON.stringify({triage_result: triageData})
+                            }).then(r => r.json()).then(recData => {
+                                return { triage: triageData, recommendations: recData };
+                            });
+                        })
+                        .then(data => {
+                            btn.innerHTML = 'Analyze';
+                            btn.disabled = false;
+                            
+                            const resDiv = document.getElementById('aiTriageResult');
+                            const u = data.triage.urgency;
+                            const badgeClass = (u==='CRITICAL'||u==='HIGH') ? 'bg-danger' : (u==='MEDIUM' ? 'bg-warning' : 'bg-success');
+                            
+                            let html = `
+                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                                    <span class="small fw-bold text-uppercase text-secondary">Triage Result</span>
+                                    <span class="badge ${badgeClass}">${u} URGENCY</span>
+                                </div>
+                                <p class="small mb-2 fw-semibold">${data.triage.recommendation}</p>
+                            `;
+                            
+                            console.log("AI RESPONSE:", data);
+                            
+                            const recDocs = data.recommendations?.recommended_doctors || [];
+                            
+                            if(recDocs.length > 0) {
+                                html += `<div class="mt-3 border-top pt-2"><span class="small text-muted fw-bold d-block mb-2">Top Recommended Specialists:</span><div class="row g-2">`;
+                                recDocs.forEach(d => {
+                                    html += `
+                                    <div class="col-12">
+                                        <div class="card border-info shadow-sm" style="cursor: pointer;" onclick="document.getElementById('doctorSelect').value='${d.id}'; handleDoctorChange();">
+                                            <div class="card-body p-2 d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="fa-solid fa-user-doctor text-info me-2"></i><strong>${d.name || d.user?.first_name}</strong>
+                                                    <div class="small text-muted">${d.specialization || d.specialty} • ${d.experience} Yrs Exp • ⭐ ${d.rating}</div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3">Select</button>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                                    // Auto select first
+                                    if(recDocs.indexOf(d) === 0) {
+                                        const sel = document.getElementById('doctorSelect');
+                                        if(sel) {
+                                            sel.value = d.id;
+                                            if(typeof handleDoctorChange === 'function') handleDoctorChange();
+                                        }
+                                    }
+                                });
+                                html += `</div></div>`;
+                            } else {
+                                html += `<div class="mt-3 border-top pt-2 text-center text-muted"><p class="small mb-0"><i class="fa-solid fa-circle-info me-1"></i> No matching specialists currently available.</p></div>`;
+                            }
+                            
+                            resDiv.innerHTML = html;
+                            resDiv.style.display = 'block';
+                            
+                            if(u === 'CRITICAL' || u === 'HIGH' || data.triage.emergency_risk) {
+                                const emModal = new bootstrap.Modal(document.getElementById('emergencyAlertModal'));
+                                document.getElementById('emergencyAlertMessage').innerText = data.triage.recommendation;
+                                emModal.show();
+                            }
+                        })
+                        .catch(err => {
+                            btn.innerHTML = 'Analyze';
+                            btn.disabled = false;
+                            alert("AI Triage failed. Please select a doctor manually.");
+                        });
+                    }
+                    </script>
                     {% endif %}
 
                     <form method="POST" id="bookingForm" enctype="multipart/form-data">

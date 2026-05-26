@@ -124,3 +124,47 @@ def audit_logs(request):
 def realtime_monitoring(request):
     events = RealTimeEventLog.objects.order_by('-created_at')[:50]
     return render(request, 'enterprise/realtime_monitoring.html', {'events': events})
+
+from ai_engine.models import AIUsageLog, AIAuditLog
+from django.db.models import Sum
+
+@enterprise_admin_required
+def ai_engine_dashboard(request):
+    
+    total_tokens = AIUsageLog.objects.aggregate(Sum('tokens_used'))['tokens_used__sum'] or 0
+    total_calls = AIUsageLog.objects.count()
+    success_calls = AIUsageLog.objects.filter(status='SUCCESS').count()
+    fallback_calls = AIUsageLog.objects.filter(fallback_triggered=True).count()
+    
+    failure_rate = 0
+    if total_calls > 0:
+        failure_rate = round(((total_calls - success_calls) / total_calls) * 100, 2)
+        
+    fallback_rate = 0
+    if total_calls > 0:
+        fallback_rate = round((fallback_calls / total_calls) * 100, 2)
+        
+    avg_latency = 0
+    if total_calls > 0:
+        avg_latency = AIUsageLog.objects.aggregate(Sum('latency_ms'))['latency_ms__sum'] / total_calls
+        
+    # Get audit logs as well
+    audit_logs_list = AIAuditLog.objects.order_by('-timestamp')
+    audit_paginator = Paginator(audit_logs_list, 20)
+    audit_page_number = request.GET.get('audit_page')
+    audit_logs = audit_paginator.get_page(audit_page_number)
+    
+    logs_list = AIUsageLog.objects.order_by('-created_at')
+    logs_paginator = Paginator(logs_list, 20)
+    logs_page_number = request.GET.get('page')
+    logs = logs_paginator.get_page(logs_page_number)
+        
+    return render(request, 'enterprise/ai_engine_dashboard.html', {
+        'logs': logs,
+        'audit_logs': audit_logs,
+        'total_tokens': total_tokens,
+        'total_calls': total_calls,
+        'failure_rate': failure_rate,
+        'fallback_rate': fallback_rate,
+        'avg_latency': int(avg_latency)
+    })

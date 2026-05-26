@@ -1,0 +1,260 @@
+<!-- Floating AI Chat Bubble -->
+{% if user.is_authenticated and user.role == 'patient' %}
+<style>
+#ai-chat-bubble {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1050;
+}
+.chat-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #198754;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.chat-btn:hover {
+    transform: scale(1.1);
+}
+.chat-window {
+    display: none;
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+    z-index: 1050;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+}
+.chat-header {
+    background: #198754;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.chat-body {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+.chat-footer {
+    padding: 15px;
+    border-top: 1px solid #dee2e6;
+    background: white;
+    display: flex;
+}
+.chat-msg {
+    margin-bottom: 10px;
+    max-width: 85%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 14px;
+}
+.msg-user {
+    background: #198754;
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 0;
+}
+.msg-ai {
+    background: #e9ecef;
+    color: #333;
+    margin-right: auto;
+    border-bottom-left-radius: 0;
+}
+</style>
+
+<div id="ai-chat-bubble">
+    <div class="chat-btn" onclick="toggleAIChat()">
+        <i class="fa-solid fa-robot"></i>
+    </div>
+</div>
+
+<div class="chat-window" id="ai-chat-window">
+    <div class="chat-header">
+        <h6 class="mb-0 fw-bold"><i class="fa-solid fa-robot me-2"></i>CareBridge AI</h6>
+        <button type="button" class="btn-close btn-close-white" onclick="toggleAIChat()"></button>
+    </div>
+    <div class="chat-body" id="ai-chat-body">
+        <div class="chat-msg msg-ai">Hello! I am your CareBridge AI assistant. How can I help you today?</div>
+    </div>
+    <div class="chat-footer">
+        <input type="text" id="ai-chat-input" class="form-control me-2" placeholder="Type a message...">
+        <button class="btn btn-success rounded-circle px-3" onclick="sendAIMessage()">
+            <i class="fa-solid fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Emergency Alert Modal (Global) -->
+<div class="modal fade" id="emergencyAlertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Emergency Detected</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fa-solid fa-truck-medical fa-4x text-danger mb-3"></i>
+                <h5 class="fw-bold mb-3">Your symptoms require immediate medical attention.</h5>
+                <p class="text-muted" id="emergencyAlertMessage"></p>
+                <a href="tel:911" class="btn btn-danger btn-lg mt-3 fw-bold rounded-pill px-5">Call Ambulance</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Summary Modal -->
+<div class="modal fade" id="aiSummaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-sparkles me-2"></i>Deep AI Summary</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="aiSummaryBody">
+                <div class="text-center py-5" id="aiSummaryLoader">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="mt-2 text-muted">Gemini 2.5 is analyzing the record...</p>
+                </div>
+                <div id="aiSummaryContent" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let aiConversationId = null;
+
+function toggleAIChat() {
+    const win = document.getElementById('ai-chat-window');
+    win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
+}
+
+function sendAIMessage() {
+    const input = document.getElementById('ai-chat-input');
+    const msg = input.value.trim();
+    if(!msg) return;
+    
+    appendMessage(msg, 'user');
+    input.value = '';
+    
+    // Show typing...
+    const typingId = 'typing-' + Date.now();
+    const typingHtml = `<div id="${typingId}" class="chat-msg msg-ai text-muted small"><i class="fa-solid fa-ellipsis fa-fade"></i></div>`;
+    document.getElementById('ai-chat-body').insertAdjacentHTML('beforeend', typingHtml);
+    scrollToBottom();
+    
+    fetch('/api/v1/ai/chatbot/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ message: msg, conversation_id: aiConversationId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById(typingId).remove();
+        if(data.conversation_id) aiConversationId = data.conversation_id;
+        if(data.reply) appendMessage(data.reply, 'ai');
+        else appendMessage("Sorry, I encountered an error.", 'ai');
+    })
+    .catch(err => {
+        document.getElementById(typingId).remove();
+        appendMessage("Connection error.", 'ai');
+    });
+}
+
+function appendMessage(msg, sender) {
+    const css = sender === 'user' ? 'msg-user' : 'msg-ai';
+    const html = `<div class="chat-msg ${css}">${msg}</div>`;
+    const body = document.getElementById('ai-chat-body');
+    body.insertAdjacentHTML('beforeend', html);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const body = document.getElementById('ai-chat-body');
+    body.scrollTop = body.scrollHeight;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Summary API
+function fetchAiSummary(recordId, rawText) {
+    const modal = new bootstrap.Modal(document.getElementById('aiSummaryModal'));
+    modal.show();
+    
+    document.getElementById('aiSummaryLoader').style.display = 'block';
+    document.getElementById('aiSummaryContent').style.display = 'none';
+    
+    fetch('/api/v1/ai/summarize-report/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ ehr_record_id: recordId, raw_text: rawText })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('aiSummaryLoader').style.display = 'none';
+        
+        let html = `
+            <div class="alert alert-success border-success bg-success bg-opacity-10 mb-4">
+                <p class="mb-0 fw-semibold text-dark">${data.summary || 'No summary available.'}</p>
+            </div>
+        `;
+        if (data.conditions && data.conditions.length > 0) {
+            html += `<h6 class="fw-bold mb-2 text-secondary text-uppercase small">Conditions Detected</h6><div class="mb-3">`;
+            data.conditions.forEach(c => html += `<span class="badge bg-danger mb-1 me-1">${c}</span>`);
+            html += `</div>`;
+        }
+        if (data.medications && data.medications.length > 0) {
+            html += `<h6 class="fw-bold mb-2 text-secondary text-uppercase small">Medications Detected</h6><div class="mb-3">`;
+            data.medications.forEach(m => html += `<span class="badge bg-info text-dark mb-1 me-1">${m}</span>`);
+            html += `</div>`;
+        }
+        
+        const content = document.getElementById('aiSummaryContent');
+        content.innerHTML = html;
+        content.style.display = 'block';
+    })
+    .catch(err => {
+        document.getElementById('aiSummaryLoader').style.display = 'none';
+        document.getElementById('aiSummaryContent').innerHTML = `<p class="text-danger">Failed to fetch summary.</p>`;
+        document.getElementById('aiSummaryContent').style.display = 'block';
+    });
+}
+</script>
+{% endif %}
