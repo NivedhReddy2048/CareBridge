@@ -10,6 +10,11 @@ else
     export DJANGO_SETTINGS_MODULE=config.settings.local
 fi
 
+echo "DEBUG entrypoint.sh: DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE"
+echo "DEBUG entrypoint.sh: ALLOWED_HOSTS=$ALLOWED_HOSTS"
+echo "DEBUG entrypoint.sh: RENDER_EXTERNAL_HOSTNAME=$RENDER_EXTERNAL_HOSTNAME"
+echo "DEBUG entrypoint.sh: PORT=$PORT"
+
 echo "Running migrations with retry-safe wrapper..."
 max_attempts=10
 attempt=1

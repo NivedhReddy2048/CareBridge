@@ -1,6 +1,11 @@
 from .base import *
 import dj_database_url
 
+print("DEBUG production.py: DJANGO_SETTINGS_MODULE =", os.getenv("DJANGO_SETTINGS_MODULE"))
+print("DEBUG production.py: raw ALLOWED_HOSTS env =", os.getenv("ALLOWED_HOSTS"))
+print("DEBUG production.py: final ALLOWED_HOSTS =", ALLOWED_HOSTS)
+print("DEBUG production.py: DEBUG =", DEBUG)
+
 DEBUG = False
 
 # Render sets the RENDER_EXTERNAL_HOSTNAME environment variable.
@@ -114,3 +119,5 @@ CSP_IMG_SRC = ("'self'", "data:", "https:")
 
 # Database Connection Pooling (Handled by dj_database_url conn_max_age above)
 # We set conn_max_age=600 which enables persistent connections.
+
+print("FINAL ALLOWED_HOSTS =", ALLOWED_HOSTS)

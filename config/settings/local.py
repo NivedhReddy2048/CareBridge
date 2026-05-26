@@ -2,7 +2,11 @@ from .base import *
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['localhost', '127.0.0.1', '0.0.0.0', 'testserver']:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+
+print("DEBUG local.py: DJANGO_SETTINGS_MODULE =", os.getenv("DJANGO_SETTINGS_MODULE"))
+print("DEBUG local.py: final ALLOWED_HOSTS =", ALLOWED_HOSTS)
 
 DATABASES = {
     'default': {

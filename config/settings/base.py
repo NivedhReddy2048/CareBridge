@@ -22,7 +22,11 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-secret-key-change-
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "")
-ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in allowed_hosts_env.split(",")
+    if host.strip()
+]
 
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = [
@@ -34,7 +38,10 @@ if not ALLOWED_HOSTS:
 if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
 
-print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
+print("DEBUG base.py: DJANGO_SETTINGS_MODULE =", os.getenv("DJANGO_SETTINGS_MODULE"))
+print("DEBUG base.py: raw ALLOWED_HOSTS env =", os.getenv("ALLOWED_HOSTS"))
+print("DEBUG base.py: final ALLOWED_HOSTS =", ALLOWED_HOSTS)
+print("DEBUG base.py: DEBUG =", DEBUG)
 
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if os.getenv('CSRF_TRUSTED_ORIGINS') else ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://localhost:3000', 'http://127.0.0.1:3000']
 
