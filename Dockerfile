@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Install Python dependencies (Force clean rebuild - mysqlclient completely removed 2026-05-26)
 COPY requirements/ /app/requirements/
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements/production.txt -r requirements/base.txt
 

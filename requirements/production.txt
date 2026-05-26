@@ -1,3 +1,5 @@
+# CareBridge Production Requirements
+# Cache bust for clean rebuild without mysqlclient (2026-05-26)
 -r base.txt
 
 psycopg2-binary>=2.9.9
