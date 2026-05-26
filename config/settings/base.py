@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'notifications',
     'analytics',
     'enterprise',
+    'telemedicine',
+    'clinical_intelligence',
     'ai_engine',
 ]
 
@@ -173,6 +175,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # ==========================================
 # PHASE 4: DRF & API Configuration

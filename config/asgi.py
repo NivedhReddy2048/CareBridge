@@ -9,13 +9,15 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from notifications.middleware import JWTAuthMiddleware
 import notifications.routing
+import telemedicine.routing
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": JWTAuthMiddleware(
         AuthMiddlewareStack(
             URLRouter(
-                notifications.routing.websocket_urlpatterns
+                notifications.routing.websocket_urlpatterns +
+                telemedicine.routing.websocket_urlpatterns
             )
         )
     ),

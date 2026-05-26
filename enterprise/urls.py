@@ -17,4 +17,5 @@ urlpatterns = [
     path('ai-engine/', views.ai_engine_dashboard, name='ai_engine_dashboard'),
     path('storage-monitoring/', views.storage_monitoring, name='storage_monitoring'),
     path('system-monitoring/', views.system_monitoring, name='system_monitoring'),
+    path('telemedicine/', views.telemedicine_monitoring, name='telemedicine_monitoring'),
 ]

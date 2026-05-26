@@ -266,3 +266,22 @@ def system_monitoring(request):
         'api_rate_limit_hits': api_rate_limit_hits,
     }
     return render(request, 'enterprise/system_monitoring.html', context)
+
+@enterprise_admin_required
+def telemedicine_monitoring(request):
+    from telemedicine.models import ConsultationSession, ConsultationEvent
+    from django.db.models import Count
+    
+    active_sessions = ConsultationSession.objects.filter(status='IN_PROGRESS').count()
+    completed_sessions = ConsultationSession.objects.filter(status='COMPLETED').count()
+    failed_sessions = ConsultationSession.objects.filter(status='CANCELLED').count()
+    
+    recent_events = ConsultationEvent.objects.order_by('-timestamp')[:50]
+    
+    context = {
+        'active_sessions': active_sessions,
+        'completed_sessions': completed_sessions,
+        'failed_sessions': failed_sessions,
+        'recent_events': recent_events
+    }
+    return render(request, 'enterprise/telemedicine_monitoring.html', context)
