@@ -3,46 +3,6 @@ set -e
 
 echo "Starting CareBridge container..."
 
-# Safe database URL parsing
-if [ -z "$DB_HOST" ] && [ -n "$DATABASE_URL" ]; then
-  clean_db_url="${DATABASE_URL#*://}"
-  clean_db_url="${clean_db_url##*@}"
-  DB_HOST="${clean_db_url%%:*}"
-  temp_db_port="${clean_db_url#*:}"
-  DB_PORT="${temp_db_port%%/*}"
-fi
-
-# Safe Redis URL parsing
-if [ -z "$REDIS_HOST" ] && [ -n "$REDIS_URL" ]; then
-  clean_url="${REDIS_URL#redis://}"
-  clean_url="${clean_url##*@}"
-  REDIS_HOST="${clean_url%%:*}"
-  temp_port="${clean_url#*:}"
-  REDIS_PORT="${temp_port%%/*}"
-fi
-
-# PostgreSQL wait logic
-if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
-  echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."
-  while ! nc -z "$DB_HOST" "$DB_PORT"; do
-    sleep 0.1
-  done
-  echo "PostgreSQL started."
-else
-  echo "DB_HOST or DB_PORT not set, skipping PostgreSQL wait."
-fi
-
-# Redis wait logic
-if [ -n "$REDIS_HOST" ] && [ -n "$REDIS_PORT" ]; then
-  echo "Waiting for Redis at $REDIS_HOST:$REDIS_PORT..."
-  while ! nc -z "$REDIS_HOST" "$REDIS_PORT"; do
-    sleep 0.1
-  done
-  echo "Redis started."
-else
-  echo "REDIS_HOST or REDIS_PORT not set, skipping Redis wait."
-fi
-
 # Ensure we're using production settings if in prod
 if [ "$DJANGO_ENV" = "production" ]; then
     export DJANGO_SETTINGS_MODULE=config.settings.production
@@ -50,8 +10,28 @@ else
     export DJANGO_SETTINGS_MODULE=config.settings.local
 fi
 
-echo "Running migrations..."
-python manage.py migrate --noinput
+echo "Running migrations with retry-safe wrapper..."
+max_attempts=10
+attempt=1
+success=0
+
+while [ $attempt -le $max_attempts ]; do
+    echo "Migration attempt $attempt of $max_attempts..."
+    if python manage.py migrate --noinput; then
+        echo "Migrations completed successfully!"
+        success=1
+        break
+    else
+        echo "Migration attempt $attempt failed. Retrying in 5 seconds..."
+        sleep 5
+        attempt=$((attempt + 1))
+    fi
+done
+
+if [ $success -ne 1 ]; then
+    echo "Error: Migrations failed after $max_attempts attempts. Exiting cleanly."
+    exit 1
+fi
 
 echo "Checking superuser bootstrap..."
 python manage.py shell << EOF
@@ -59,7 +39,6 @@ from django.contrib.auth import get_user_model
 import os
 
 User = get_user_model()
-
 username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
 email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
 password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
@@ -80,5 +59,11 @@ EOF
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "Starting Daphne server..."
-exec "$@"
+# Render/Celery environment branching:
+if [ "$1" = "celery" ] || [ "$1" = "python" ] || [ "$1" = "sh" ] || [ "$1" = "bash" ]; then
+    echo "Running custom command: $@"
+    exec "$@"
+fi
+
+echo "Starting Daphne web server..."
+exec daphne -b 0.0.0.0 -p "$PORT" config.asgi:application
