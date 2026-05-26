@@ -18,6 +18,8 @@ if os.name == 'nt':
         pytesseract.pytesseract.tesseract_cmd = tesseract_path
     else:
         logger.warning(f"Tesseract executable not found at {tesseract_path}")
+else:
+    pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 # Startup check
 try:
