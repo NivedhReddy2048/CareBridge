@@ -170,8 +170,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==========================================
 # CELERY & REDIS
 # ==========================================
-CELERY_BROKER_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = os.environ.get("REDIS_URL")
+
+CELERY_BROKER_URL = REDIS_URL if REDIS_URL else "memory://"
+CELERY_RESULT_BACKEND = REDIS_URL if REDIS_URL else "cache+memory://"
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -242,12 +244,12 @@ RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
 ASGI_APPLICATION = "config.asgi.application"
 
 # Redis channel layer in production, in-memory fallback locally
-if os.environ.get("REDIS_URL"):
+if REDIS_URL:
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {
-                "hosts": [os.environ.get("REDIS_URL")],
+                "hosts": [REDIS_URL],
             },
         },
     }

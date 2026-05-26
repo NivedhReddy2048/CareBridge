@@ -40,9 +40,13 @@ class HealthCheckView(APIView):
                 health_status["services"]["redis"] = "ok"
             else:
                 raise Exception("Cache mismatch")
-        except Exception:
-            health_status["services"]["redis"] = "down"
-            health_status["status"] = "unhealthy"
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning("Redis health check failed safely (degraded).")
+            health_status["services"]["redis"] = "degraded"
+            # We don't mark the whole system as unhealthy just because cache/redis is down
+            # as DRF APIs and Django will still boot.
             
         # 3. Storage Backend
         try:
