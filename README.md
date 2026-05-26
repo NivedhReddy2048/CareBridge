@@ -1,153 +1,41 @@
-# Healthcare Appointment and Telemedicine Management System
+# CareBridge Enterprise Healthcare Platform
 
-## 📂 Project Structure
+CareBridge is a fully modernized, distributed asynchronous Django healthcare platform. Over 12 distinct engineering phases, CareBridge evolved from a monolithic MVP into a scalable, real-time, AI-driven telemedicine SaaS platform.
 
-Based on the source code analysis, the project is organized into modular Django applications handling specific domains of the healthcare system.
-```text
-healthcare_project/
-├── manage.py                # Django command-line utility
-├── myvenv/                  # Virtual environment (dependencies)
-├── healthcare_project/      # Project configuration (settings, urls)
-│
-├── accounts/                # App: User Authentication & Roles
-│   ├── models.py            # CustomUser model (Patient/Doctor/Admin)
-│   ├── decorators.py        # @role_required decorators
-│   └── ...
-│
-├── appointments/            # App: Scheduling Logic
-│   ├── models.py            # Appointment, Doctor models
-│   ├── views.py             # Booking, canceling, completing logic
-│   └── ...
-│
-├── dashboard/               # App: User Interfaces & Main Logic
-│   ├── models.py            # Notification models
-│   ├── views.py             # Dashboards for Patient, Doctor, Admin
-│   ├── forms.py             # Profile update forms
-│   ├── utils.py             # Notification utilities
-│   └── templates/           # HTML Templates (dashboard/, appointments/)
-│
-└── records/                 # App: Medical History
-    ├── models.py            # MedicalReport models
-    └── ...
-```
+## 🚀 Key Enterprise Features
 
----
+### 1. Real-Time Telemedicine (WebRTC & WebSockets)
+- **Live Consultations**: Patients and Doctors can join secure video rooms.
+- **WebSocket Signaling**: Native Daphne/ASGI channels implementation powered by a Redis Pub/Sub backend.
+- **Event-Driven Architecture**: Chat and custom signaling events are seamlessly broadcast across authenticated channel layers.
 
-# 📋 Consultant Report: System Analysis
+### 2. Distributed AI Orchestration
+- **Gemini Clinical Intelligence**: Live consultation transcripts are asynchronously fed into Google's Gemini Pro LLM.
+- **Celery & Redis Pipelines**: Heavy AI inference tasks are detached from the WebSocket loop, preventing latency spikes. 
+- **Retry-Safe Orchestration**: Task pipelines incorporate exponential backoffs and graceful failure modes to handle third-party AI downtime without interrupting patient care.
 
-**To:** Project Stakeholders  
-**From:** Senior Software Consultant  
-**Subject:** Feasibility and Overview of Healthcare Appointment System  
+### 3. Enterprise Observability & Monitoring
+- **Real-Time Dashboards**: Granular metrics across Celery Workers, Active WebSockets, AI Tokens consumed, and Redis Queues.
+- **Audit Trails**: Extensive logging of every clinical action, AI fallback, and system error to ensure HIPAA-level traceability.
 
-Below is a detailed breakdown of the proposed system, designed to provide a clear understanding of its value, technical foundation, and future potential for your clinics.
+### 4. Zero-Trust Storage Architecture
+- **Presigned Cloud Storage**: Medical reports and EHR payloads are never statically hosted. Files reside in secure, private Amazon S3 buckets, accessed only via short-lived, encrypted, pre-signed AWS URLs.
+- **File Validation**: Strict MIME-type validations and basic malware scanning hooks exist to prevent arbitrary uploads.
 
-## 1️⃣ Project Overview
+## 🏗️ Technology Stack
+- **Core Engine**: Django 4.2+, Python 3.14+
+- **APIs**: Django REST Framework (DRF), JWT Authentication
+- **Real-Time Layer**: Django Channels, Daphne, WebSockets
+- **Async Workers**: Celery
+- **In-Memory Store/Message Broker**: Redis
+- **Database**: PostgreSQL
+- **Cloud Infrastructure**: AWS S3, Render (Deployment target)
+- **AI Core**: Google DeepMind Gemini (`google.generativeai`)
 
-### What problem does this system solve?
-Traditional clinics often suffer from manual scheduling errors, lost paper records, and the inability to treat patients remotely. This system digitizes the entire workflow, eliminating double-bookings, securing patient history, and enabling **Telemedicine** (video consultations) to reach patients who cannot visit physically.
+## ⚙️ Deployment Overview
+This system is designed to be fully containerized. Please refer to `DEPLOYMENT_GUIDE.md` and `ARCHITECTURE_OVERVIEW.md` for specific instructions regarding environment variables (`.env.example`), scaling Celery workers, and managing Daphne WS concurrency.
 
-### Who are the main users?
-1.  **Patients:** Can book appointments, view medical history, and join video calls.
-2.  **Doctors:** Manage schedules, view patient profiles, conduct video calls, and upload reports.
-3.  **Administrators:** Oversee the entire system, manage users, and view clinic statistics.
-
-### How does it improve efficiency?
-*   **Automation:** Reduces front-desk workload by allowing patients to self-book.
-*   **Centralization:** Doctors have instant access to patient history without searching through file cabinets.
-*   **Accessibility:** Reduces "no-shows" via remote video options and automated notifications.
-
-## 2️⃣ Core Features Required
-
-| Feature | Purpose & Benefit |
-| :--- | :--- |
-| **Patient Registration & Login** | Securely creates a personal account for patients to manage their health journey. |
-| **Doctor Registration & Profile** | Allows doctors to showcase their specialization and availability. |
-| **Online Appointment Booking** | Enables 24/7 scheduling, reducing phone traffic at the reception. |
-| **Confirmation System** | Doctors accept/reject requests, preventing scheduling conflicts. |
-| **Video Consultation (Jitsi)** | Integrated secure video calls for remote treatment (Telehealth). |
-| **Auto Meeting Links** | The system automatically generates a unique video link when an appointment is confirmed. |
-| **Medical Report Upload** | Doctors can upload digital prescriptions/reports directly to the patient's profile. |
-| **Patient History View** | Patients can access past reports and visit history anytime. |
-| **Notification System** | Alerts users about status changes (e.g., "Appointment Confirmed", "Report Ready"). |
-| **Role-Based Dashboards** | Custom home screens showing relevant data for Doctors vs. Patients. |
-
-## 3️⃣ Technology Stack Justification
-
-### Why these technologies?
-*   **Django (Backend):** A high-level Python framework known for **security** and **speed**. It handles complex data relationships (like patients linked to appointments linked to reports) excellent well.
-*   **MySQL (Database):** A robust, standard relational database ideal for structured data like user records and appointment logs.
-*   **HTML/CSS/Bootstrap:** Ensures the site is responsive (works on mobile and desktop) and looks professional.
-*   **JavaScript:** Provides interactivity, such as dynamic forms and instant notifications without reloading the page.
-*   **Jitsi Meet:** An open-source, encrypted video conferencing tool. It is free to use and easy to embed, keeping costs low while maintaining privacy.
-
-### Scalability & Hosting
-*   **Scalable?** Yes. Django is designed to scale. As the clinic grows, the database and backend can handle increased traffic with proper server configuration.
-*   **Cloud Hosting?** The system is cloud-ready. It can be deployed on **AWS, Azure, or DigitalOcean** easily using standard deployment practices (Docker/Gunicorn).
-
-## 4️⃣ Cost Estimation (Approximate)
-
-*Note: These are rough estimates for a custom software development lifecycle.*
-
-| Module | Estimated Cost | Reason |
-| :--- | :--- | :--- |
-| **Backend Development** | High | Core logic, database architecture, and security rules. |
-| **Frontend UI** | Medium | Responsive design for mobile/desktop access. |
-| **Video Integration** | Low/Medium | Jitsi is free, but integration requires configuration. |
-| **Medical Report System** | Medium | Requires secure file handling and storage logic. |
-| **Testing & Deployment** | Medium | Ensuring bug-free code and server setup. |
-
-### Operational Costs
-*   **Server (Cloud):** ~$20 - $50 / month (depending on traffic).
-*   **Domain + SSL:** ~$20 / year.
-*   **Maintenance:** Varies (typically a retainer for updates/backups).
-
-## 5️⃣ Security & Privacy Questions
-
-*   **Patient Data:** Protected via Django's built-in authentication system. Passwords are hashed (never stored as plain text).
-*   **Medical Reports:** Access is restricted at the code level. A patient can only see *their* reports; a doctor can only see reports for *their* patients.
-*   **Video Privacy:** Jitsi Meet uses encryption. The system generates unique meeting IDs for every appointment to prevent "Zoom-bombing."
-*   **Role Restriction:** The code uses decorators (e.g., `@role_required(['doctor'])`) to ensure a patient cannot access administrative or doctor-specific pages.
-
-## 6️⃣ Future Expansion Possibilities
-
-The modular design allows for easy upgrades:
-
-1.  **Online Payments:** **Easy.** Can integrate Stripe or Razorpay for consultation fees.
-2.  **E-Prescriptions:** **Medium.** Requires a standardized format and PDF generation tools.
-3.  **Lab Integration:** **Medium.** Requires API access from the Lab's software.
-4.  **AI Chatbot:** **Medium/High.** Can be added to the frontend to answer FAQs or triage symptoms.
-5.  **Mobile App:** **High.** Requires building a separate app (React Native/Flutter) that connects to this Django backend via API.
-
-## 7️⃣ Timeline Estimation
-
-*   **Basic MVP (Minimum Viable Product):** **4 - 6 Weeks.**
-    *   Core booking, basic profiles, video link generation.
-*   **Full Production System:** **3 - 4 Months.**
-    *   Advanced reporting, notifications, polished UI, rigorous security testing.
-
-## 8️⃣ Risks & Limitations
-
-*   **Technical Risks:** Internet connectivity is required for video calls. If the clinic's internet fails, telemedicine stops.
-*   **Compliance:** Must ensure the server configuration meets local health data laws (e.g., HIPAA in US, GDPR in Europe).
-*   **Adoption:** Older patients may struggle with the digital interface; a simple UI is critical.
-
-## 9️⃣ System Capacity & Concurrency
-
-### How many members can use it at once?
-*   **General Traffic:** On a standard entry-level cloud server (e.g., 2 vCPUs, 4GB RAM), the system can handle approximately **200-500 concurrent users** (people clicking around the site at the same moment).
-*   **Booking Limits:** The database handles "locking." If multiple people try to book the exact same doctor slot at the exact same second, the system processes them in a queue. The first request wins, and others receive a "Slot Unavailable" message.
-*   **Video Call Limits:** Video is bandwidth-heavy. A basic server typically supports **15-30 simultaneous video consultations**. For more, we simply upgrade the server plan.
-
-### Is there a limit on registered members?
-No. The database (MySQL) can store millions of patient records and appointment logs without performance degradation, provided the database is indexed correctly.
-
-## 🔟 Final Recommendation
-
-**Verdict: Highly Recommended.**
-
-For a small clinic or hospital, this system offers a high Return on Investment (ROI). It modernizes operations, reduces administrative overhead, and opens a new revenue stream through Telemedicine. The technology stack chosen (Django + MySQL) is stable, secure, and industry-standard, minimizing long-term technical debt.
-
-## 🤝 Collaboration Team
+## 👥 Collaboration Team
 <div align="right">
 <a href="https://github.com/KailashSatkuri-warangal">
   <img src="https://github.com/KailashSatkuri-warangal.png" width="60px" style="border-radius:50%" title="Kailash Satkuri" />

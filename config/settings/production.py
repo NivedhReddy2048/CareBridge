@@ -100,8 +100,16 @@ if SENTRY_DSN:
 # PRODUCTION SECURITY HEADERS
 # ==========================================
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-# Optional: CSP
-# CSP_DEFAULT_SRC = ("'self'",)
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+
+# Basic CSP using django-csp if installed, or handled via middleware
+# We will just note the headers here
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com")
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net")
+CSP_FONT_SRC = ("'self'", "https://cdnjs.cloudflare.com", "data:")
+CSP_IMG_SRC = ("'self'", "data:", "https:")
 
 # Database Connection Pooling (Handled by dj_database_url conn_max_age above)
 # We set conn_max_age=600 which enables persistent connections.

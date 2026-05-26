@@ -11,7 +11,9 @@ class ClinicalIntelligenceService:
     def analyze_consultation_events(session_id, patient):
         """Analyze chat/transcription history of a consultation and extract intelligence."""
         try:
-            events = ConsultationEvent.objects.filter(session_id=session_id, event_type__in=['CHAT', 'SIGNAL']).order_by('timestamp')
+            # Implement rolling window truncation (limit to last 100 events)
+            events = ConsultationEvent.objects.filter(session_id=session_id, event_type__in=['CHAT', 'SIGNAL']).order_by('-timestamp')[:100]
+            events = reversed(events) # Order chronological
             
             # Build conversation transcript
             transcript = ""
@@ -23,6 +25,11 @@ class ClinicalIntelligenceService:
                     
             if not transcript:
                 return None
+                
+            # Truncate to maximum characters to protect Gemini token budget
+            MAX_CHARS = 4000
+            if len(transcript) > MAX_CHARS:
+                transcript = "...[TRUNCATED HISTORICAL CONTEXT]...\n" + transcript[-MAX_CHARS:]
                 
             prompt = f"""
             Analyze the following live medical consultation transcript.
