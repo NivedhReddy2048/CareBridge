@@ -117,19 +117,22 @@ def register_view(request):
                 request.session['reg_email'] = user.email
                 
                 try:
-                    # TEMPORARILY DISABLED FOR REGISTRATION DEBUGGING
-                    # send_mail(
-                    #     subject='CareBridge - Verify Your Account',
-                    #     message=f'Welcome {user.first_name}!\n\nYour verification code is: {otp}',
-                    #     from_email=settings.DEFAULT_FROM_EMAIL,
-                    #     recipient_list=[user.email],
-                    #     fail_silently=False
-                    # )
-                    print(f"TEMPORARILY DISABLED FOR REGISTRATION DEBUGGING: Bypass send_mail. OTP is {otp}")
+                    from django.core.mail import get_connection
+                    connection = get_connection(timeout=10)
+                    send_mail(
+                        subject='CareBridge - Verify Your Account',
+                        message=f'Welcome {user.first_name}!\n\nYour verification code is: {otp}',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user.email],
+                        fail_silently=False,
+                        connection=connection
+                    )
+                    logger.info(f"Successfully sent OTP email to {user.email} (OTP: {otp})")
                     messages.success(request, f"Verification code sent to {user.email}")
                     return redirect('verify_otp')
                     
                 except Exception as e:
+                    logger.exception("EMAIL SEND EXCEPTION:")
                     import traceback
                     print("\n=== EMAIL SEND FAILURE ===")
                     traceback.print_exc()
@@ -293,20 +296,23 @@ def resend_otp_view(request):
         if 'reg_otp' in request.session and 'reg_email' in request.session:
             otp = request.session['reg_otp']
             email = request.session['reg_email']
-            # TEMPORARILY DISABLED FOR REGISTRATION DEBUGGING
-            # send_mail(
-            #     'Resend: Verification Code',
-            #     f'Your code is: {otp}',
-            #     settings.DEFAULT_FROM_EMAIL,
-            #     [email],
-            #     fail_silently=True
-            # )
-            print(f"TEMPORARILY DISABLED FOR REGISTRATION DEBUGGING: Bypass send_mail in resend_otp. OTP is {otp}")
+            
+            from django.core.mail import get_connection
+            connection = get_connection(timeout=10)
+            send_mail(
+                'Resend: Verification Code',
+                f'Your code is: {otp}',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+                connection=connection
+            )
+            logger.info(f"Successfully resent OTP email to {email} (OTP: {otp})")
             messages.success(request, "OTP resent successfully.")
     except Exception as e:
         logger.exception("RESEND OTP ERROR:")
         print(traceback.format_exc())
-        raise
+        messages.error(request, f"Error sending verification email: {str(e)}")
     finally:
         print(f"RESEND OTP TOOK {time.time() - start} seconds")
     return redirect('verify_otp')
