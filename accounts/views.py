@@ -96,38 +96,54 @@ def register_view(request):
         return redirect('patient_dashboard')
 
     if request.method == 'POST':
-        form = PatientRegistrationForm(request.POST, request.FILES)
-        
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.is_active = False 
-            user.save()
+        import traceback
+        import logging
+        import time
+
+        logger = logging.getLogger(__name__)
+        start = time.time()
+
+        try:
+            form = PatientRegistrationForm(request.POST, request.FILES)
             
-            otp = str(random.randint(100000, 999999))
-            request.session['reg_otp'] = otp
-            request.session['reg_user_id'] = user.id
-            request.session['reg_email'] = user.email
-            
-            try:
-                send_mail(
-                    subject='CareBridge - Verify Your Account',
-                    message=f'Welcome {user.first_name}!\n\nYour verification code is: {otp}',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    fail_silently=False
-                )
-                messages.success(request, f"Verification code sent to {user.email}")
-                return redirect('verify_otp')
+            if form.is_valid():
+                user = form.save(commit=False)
+                user.is_active = False 
+                user.save()
                 
-            except Exception as e:
-                import traceback
-                print("\n=== EMAIL SEND FAILURE ===")
-                traceback.print_exc()
-                print("==========================\n")
-                user.delete()
-                messages.error(request, f"Error sending email. Registration cancelled. Error: {str(e)}")
-        else:
-            messages.error(request, "Registration Failed. Please check inputs.")
+                otp = str(random.randint(100000, 999999))
+                request.session['reg_otp'] = otp
+                request.session['reg_user_id'] = user.id
+                request.session['reg_email'] = user.email
+                
+                try:
+                    # TEMPORARILY DISABLED FOR REGISTRATION DEBUGGING
+                    # send_mail(
+                    #     subject='CareBridge - Verify Your Account',
+                    #     message=f'Welcome {user.first_name}!\n\nYour verification code is: {otp}',
+                    #     from_email=settings.DEFAULT_FROM_EMAIL,
+                    #     recipient_list=[user.email],
+                    #     fail_silently=False
+                    # )
+                    print(f"TEMPORARILY DISABLED FOR REGISTRATION DEBUGGING: Bypass send_mail. OTP is {otp}")
+                    messages.success(request, f"Verification code sent to {user.email}")
+                    return redirect('verify_otp')
+                    
+                except Exception as e:
+                    import traceback
+                    print("\n=== EMAIL SEND FAILURE ===")
+                    traceback.print_exc()
+                    print("==========================\n")
+                    user.delete()
+                    messages.error(request, f"Error sending email. Registration cancelled. Error: {str(e)}")
+            else:
+                messages.error(request, "Registration Failed. Please check inputs.")
+        except Exception as e:
+            logger.exception("REGISTRATION ERROR:")
+            print(traceback.format_exc())
+            raise
+        finally:
+            print(f"REGISTRATION TOOK {time.time() - start} seconds")
     else:
         form = PatientRegistrationForm()
     
