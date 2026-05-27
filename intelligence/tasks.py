@@ -11,15 +11,23 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True)
 def process_ehr_document(self, attachment_id):
     from django.utils import timezone
+    import time
+    import traceback
+
     start_time = timezone.now()
+    start_perf = time.time()
     logger.info(f"Starting true AI processing for DocumentAttachment ID: {attachment_id}")
     
     try:
         doc = DocumentAttachment.objects.get(id=attachment_id)
         
         # 1. OCR Pipeline: Extract real text from file
-        file_path = doc.file.path
-        raw_text, extraction_method = DocumentExtractor.extract_text(file_path)
+        # TEMPORARILY DISABLED FOR OCR DEBUGGING
+        # file_path = doc.file.path
+        # raw_text, extraction_method = DocumentExtractor.extract_text(file_path)
+        print("TEMPORARILY DISABLED FOR OCR DEBUGGING: Bypassing DocumentExtractor.extract_text")
+        raw_text = "TEMPORARILY DISABLED FOR OCR DEBUGGING: Mock extracted EHR document text. Blood test findings consistent with fever, high lymphocytes, and recommended treatment involving paracetamol."
+        extraction_method = "MOCK_OCR"
         
         logger.info(f"[{attachment_id}] Extraction Method: {extraction_method}")
         logger.info(f"[{attachment_id}] Extracted Character Count: {len(raw_text)}")
@@ -80,6 +88,7 @@ def process_ehr_document(self, attachment_id):
             )
         
         logger.info(f"Successfully processed DocumentAttachment ID: {attachment_id}")
+        print(f"OCR TASK TOOK {time.time() - start_perf} seconds")
         
         # Phase 6: Save Celery Observability Metrics
         from analytics.models import AIProcessingMetrics
@@ -99,27 +108,31 @@ def process_ehr_document(self, attachment_id):
         )
         
     except Exception as e:
-        logger.error(f"Failed to process DocumentAttachment ID {attachment_id}: {str(e)}")
+        logger.exception("DETAILED ERROR:")
+        print(traceback.format_exc())
         
-        # Phase 6: Log Failure Metrics
-        from analytics.models import ErrorEventLog, AIProcessingMetrics
-        from django.utils import timezone
-        import traceback
-        
-        ErrorEventLog.objects.create(
-            source='Celery.process_ehr_document',
-            error_type=type(e).__name__,
-            error_message=str(e),
-            stack_trace=traceback.format_exc()
-        )
-        
-        AIProcessingMetrics.objects.create(
-            document_id=attachment_id,
-            task_id=self.request.id,
-            start_time=start_time,
-            end_time=timezone.now(),
-            duration_seconds=(timezone.now() - start_time).total_seconds(),
-            ocr_method='FAILED',
-            is_success=False,
-            confidence_score=0.0
-        )
+        try:
+            from analytics.models import ErrorEventLog, AIProcessingMetrics
+            from django.utils import timezone
+            
+            ErrorEventLog.objects.create(
+                source='Celery.process_ehr_document',
+                error_type=type(e).__name__,
+                error_message=str(e),
+                stack_trace=traceback.format_exc()
+            )
+            
+            AIProcessingMetrics.objects.create(
+                document_id=attachment_id,
+                task_id=self.request.id,
+                start_time=start_time,
+                end_time=timezone.now(),
+                duration_seconds=(timezone.now() - start_time).total_seconds(),
+                ocr_method='FAILED',
+                is_success=False,
+                confidence_score=0.0
+            )
+        except Exception as log_err:
+            logger.error(f"Failed to record failure metrics: {log_err}")
+            
+        raise

@@ -5,4 +5,6 @@ class EhrConfig(AppConfig):
     name = 'ehr'
 
     def ready(self):
-        import ehr.signals # noqa
+        # TEMPORARILY DISABLED FOR REGISTRATION/OCR DEBUGGING
+        # import ehr.signals # noqa
+        pass

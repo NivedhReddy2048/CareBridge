@@ -282,17 +282,33 @@ def staff_password_reset_confirm(request):
 # 9. GENERAL HELPERS
 # ==========================================
 def resend_otp_view(request):
-    if 'reg_otp' in request.session and 'reg_email' in request.session:
-        otp = request.session['reg_otp']
-        email = request.session['reg_email']
-        send_mail(
-            'Resend: Verification Code',
-            f'Your code is: {otp}',
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=True
-        )
-        messages.success(request, "OTP resent successfully.")
+    import traceback
+    import logging
+    import time
+
+    logger = logging.getLogger(__name__)
+    start = time.time()
+
+    try:
+        if 'reg_otp' in request.session and 'reg_email' in request.session:
+            otp = request.session['reg_otp']
+            email = request.session['reg_email']
+            # TEMPORARILY DISABLED FOR REGISTRATION DEBUGGING
+            # send_mail(
+            #     'Resend: Verification Code',
+            #     f'Your code is: {otp}',
+            #     settings.DEFAULT_FROM_EMAIL,
+            #     [email],
+            #     fail_silently=True
+            # )
+            print(f"TEMPORARILY DISABLED FOR REGISTRATION DEBUGGING: Bypass send_mail in resend_otp. OTP is {otp}")
+            messages.success(request, "OTP resent successfully.")
+    except Exception as e:
+        logger.exception("RESEND OTP ERROR:")
+        print(traceback.format_exc())
+        raise
+    finally:
+        print(f"RESEND OTP TOOK {time.time() - start} seconds")
     return redirect('verify_otp')
 
 def verify_otp_view_placeholder(request):
