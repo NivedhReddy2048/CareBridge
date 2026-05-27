@@ -8,11 +8,6 @@ print("DEBUG production.py: DEBUG =", DEBUG)
 
 DEBUG = False
 
-# Render sets the RENDER_EXTERNAL_HOSTNAME environment variable.
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
 # Enforce strict secret key in production
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY or len(SECRET_KEY) < 50 or 'django-insecure' in SECRET_KEY:
@@ -41,8 +36,11 @@ X_FRAME_OPTIONS = 'DENY'
 CSRF_TRUSTED_ORIGINS = ['https://carebridge-ugeq.onrender.com']
 
 # Ensure production ALLOWED_HOSTS is correct
-if 'carebridge-ugeq.onrender.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('carebridge-ugeq.onrender.com')
+ALLOWED_HOSTS = [
+    'carebridge-ugeq.onrender.com',
+    'localhost',
+    '127.0.0.1'
+]
 
 # HSTS Settings
 SECURE_HSTS_SECONDS = 31536000  # 1 year
@@ -113,6 +111,7 @@ if SENTRY_DSN:
 # PRODUCTION SECURITY HEADERS
 # ==========================================
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 SECURE_REFERRER_POLICY = 'same-origin'
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
 
