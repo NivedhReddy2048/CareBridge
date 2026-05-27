@@ -37,6 +37,13 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
+# Correctly configure trusted origins with the https scheme
+CSRF_TRUSTED_ORIGINS = ['https://carebridge-ugeq.onrender.com']
+
+# Ensure production ALLOWED_HOSTS is correct
+if 'carebridge-ugeq.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('carebridge-ugeq.onrender.com')
+
 # HSTS Settings
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
