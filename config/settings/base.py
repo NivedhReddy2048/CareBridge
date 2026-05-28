@@ -157,14 +157,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
-# Email backend configuration
-EMAIL_BACKEND = 'config.email_backend.CustomEmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '') 
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '') 
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'CareBridge <no-reply@carebridge.com>')
+# Email backend configuration (Migrated to Resend API)
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'CareBridge <onboarding@resend.dev>')
 
 # Session Settings
 SESSION_COOKIE_AGE = 600

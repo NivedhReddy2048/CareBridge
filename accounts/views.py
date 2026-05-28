@@ -7,7 +7,7 @@ from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
-from django.core.mail import send_mail
+from .email_service import send_otp_email
 from django.conf import settings
 from django.db import transaction 
 
@@ -117,28 +117,17 @@ def register_view(request):
                 request.session['reg_email'] = user.email
                 
                 try:
-                    from django.core.mail import get_connection
-                    connection = get_connection(timeout=10)
-                    send_mail(
-                        subject='CareBridge - Verify Your Account',
-                        message=f'Welcome {user.first_name}!\n\nYour verification code is: {otp}',
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[user.email],
-                        fail_silently=False,
-                        connection=connection
-                    )
-                    logger.info(f"Successfully sent OTP email to {user.email} (OTP: {otp})")
+                    send_otp_email(user.email, otp, subject='CareBridge - Verify Your Account')
                     messages.success(request, f"Verification code sent to {user.email}")
                     return redirect('verify_otp')
-                    
                 except Exception as e:
-                    logger.exception("EMAIL SEND EXCEPTION:")
-                    import traceback
-                    print("\n=== EMAIL SEND FAILURE ===")
-                    traceback.print_exc()
-                    print("==========================\n")
-                    user.delete()
-                    messages.error(request, f"Error sending email. Registration cancelled. Error: {str(e)}")
+                    if settings.DEBUG:
+                        print(f"\n================================\nCAREBRIDGE OTP DEBUG\nUser: {user.email}\nOTP: {otp}\n==========\n")
+                        messages.warning(request, "Email service temporarily unavailable. Using debug fallback.")
+                        return redirect('verify_otp')
+                    else:
+                        user.delete()
+                        messages.error(request, "Email service temporarily unavailable. Registration cancelled.")
             else:
                 messages.error(request, "Registration Failed. Please check inputs.")
         except Exception as e:
@@ -235,14 +224,15 @@ def staff_password_reset(request):
             otp = str(random.randint(100000, 999999))
             request.session['reset_otp'] = otp
             request.session['reset_user_id'] = user.id
-            send_mail(
-                'Staff Password Reset',
-                f'Your code is: {otp}',
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=True
-            )
-            messages.success(request, f"Code sent to email linked to {username}")
+            try:
+                send_otp_email(user.email, otp, subject='Staff Password Reset')
+                messages.success(request, f"Code sent to email linked to {username}")
+            except Exception as e:
+                if settings.DEBUG:
+                    print(f"\n================================\nCAREBRIDGE OTP DEBUG\nUser: {user.email}\nOTP: {otp}\n==========\n")
+                    messages.warning(request, "Email service temporarily unavailable. Using debug fallback.")
+                else:
+                    messages.error(request, "Email service temporarily unavailable.")
             return redirect('staff_password_reset_verify')
         except User.DoesNotExist:
             messages.error(request, "Staff ID not found.")
@@ -293,25 +283,23 @@ def resend_otp_view(request):
     start = time.time()
 
     try:
-        if 'reg_otp' in request.session and 'reg_email' in request.session:
-            otp = request.session['reg_otp']
+        if 'reg_email' in request.session:
+            # Regenerate OTP safely
+            otp = str(random.randint(100000, 999999))
+            request.session['reg_otp'] = otp
             email = request.session['reg_email']
             
-            from django.core.mail import get_connection
-            connection = get_connection(timeout=10)
-            send_mail(
-                'Resend: Verification Code',
-                f'Your code is: {otp}',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-                connection=connection
-            )
-            logger.info(f"Successfully resent OTP email to {email} (OTP: {otp})")
-            messages.success(request, "OTP resent successfully.")
+            try:
+                send_otp_email(email, otp, subject='Resend: Verification Code')
+                messages.success(request, "OTP resent successfully.")
+            except Exception as e:
+                if settings.DEBUG:
+                    print(f"\n================================\nCAREBRIDGE OTP DEBUG\nUser: {email}\nOTP: {otp}\n==========\n")
+                    messages.warning(request, "Email service temporarily unavailable. Using debug fallback.")
+                else:
+                    messages.error(request, "Email service temporarily unavailable.")
     except Exception as e:
         logger.exception("RESEND OTP ERROR:")
-        print(traceback.format_exc())
         messages.error(request, f"Error sending verification email: {str(e)}")
     finally:
         print(f"RESEND OTP TOOK {time.time() - start} seconds")
