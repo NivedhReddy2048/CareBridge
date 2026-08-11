@@ -274,7 +274,7 @@ This project is currently developed for educational, research, and portfolio pur
 
 ---
 
-👥 Collaboration Team
+# 👥 Collaboration Team
 
 <div align="right">
 
