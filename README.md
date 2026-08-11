@@ -1,55 +1,412 @@
-# CareBridge Enterprise Healthcare Platform
+# 🚀 CareBridge — Enterprise Healthcare Platform
 
-CareBridge is a fully modernized, distributed asynchronous Django healthcare platform. Over 12 distinct engineering phases, CareBridge evolved from a monolithic MVP into a scalable, real-time, AI-driven telemedicine SaaS platform.
+CareBridge is a modern, full-stack Django healthcare and telemedicine platform designed to connect patients with healthcare providers. It provides end-to-end workflows for patient registration, appointment scheduling, electronic health records (EHR) management, OCR report parsing, online payment processing, real-time video consultation signaling, and AI-assisted clinical symptom analysis.
 
-## 🚀 Key Enterprise Features
+Built with a modular Django architecture, CareBridge incorporates asynchronous background processing via Celery and Redis, real-time WebSocket communication through Django Channels and Daphne, and environment-aware security controls for local development and cloud deployment.
 
-### 1. Real-Time Telemedicine (WebRTC & WebSockets)
-- **Live Consultations**: Patients and Doctors can join secure video rooms.
-- **WebSocket Signaling**: Native Daphne/ASGI channels implementation powered by a Redis Pub/Sub backend.
-- **Event-Driven Architecture**: Chat and custom signaling events are seamlessly broadcast across authenticated channel layers.
+---
 
-### 2. Distributed AI Orchestration
-- **Gemini Clinical Intelligence**: Live consultation transcripts are asynchronously fed into Google's Gemini Pro LLM.
-- **Celery & Redis Pipelines**: Heavy AI inference tasks are detached from the WebSocket loop, preventing latency spikes. 
-- **Retry-Safe Orchestration**: Task pipelines incorporate exponential backoffs and graceful failure modes to handle third-party AI downtime without interrupting patient care.
+# 🔴 Live Demo
 
-### 3. Enterprise Observability & Monitoring
-- **Real-Time Dashboards**: Granular metrics across Celery Workers, Active WebSockets, AI Tokens consumed, and Redis Queues.
-- **Audit Trails**: Extensive logging of every clinical action, AI fallback, and system error to ensure HIPAA-level traceability.
+- **Deployed Application**: [🔴 Live Demo — CareBridge](https://carebridge-ugeq.onrender.com)
+- **Enterprise Analytics & Monitoring Portal**: [CareBridge Enterprise Portal](https://carebridge-ugeq.onrender.com/enterprise/)
+- **Staff / Doctor Portal**: [CareBridge Staff Login](https://carebridge-ugeq.onrender.com/login/staff/)
+- **Administrative Portal**: `https://carebridge-ugeq.onrender.com/admin/`
 
-### 4. Zero-Trust Storage Architecture
-- **Presigned Cloud Storage**: Medical reports and EHR payloads are never statically hosted. Files reside in secure, private Amazon S3 buckets, accessed only via short-lived, encrypted, pre-signed AWS URLs.
-- **File Validation**: Strict MIME-type validations and basic malware scanning hooks exist to prevent arbitrary uploads.
+---
 
-## 🏗️ Technology Stack
-- **Core Engine**: Django 4.2+, Python 3.14+
-- **APIs**: Django REST Framework (DRF), JWT Authentication
-- **Real-Time Layer**: Django Channels, Daphne, WebSockets
-- **Async Workers**: Celery
-- **In-Memory Store/Message Broker**: Redis
-- **Database**: PostgreSQL
-- **Cloud Infrastructure**: AWS S3, Render (Deployment target)
-- **AI Core**: Google DeepMind Gemini (`google.generativeai`)
+# ✨ Key Features
 
-## ⚙️ Deployment Overview
-This system is designed to be fully containerized. Please refer to `DEPLOYMENT_GUIDE.md` and `ARCHITECTURE_OVERVIEW.md` for specific instructions regarding environment variables (`.env.example`), scaling Celery workers, and managing Daphne WS concurrency.
+## 🔐 Authentication & User Management
+- **Multi-Role User Accounts**: Dedicated roles for Patients, Doctors, Staff, and Administrators powered by a custom user model (`CustomUser`) with auto-generated patient IDs (e.g., `P-XXXXXX`).
+- **Environment-Aware Registration OTP Flow**:
+  - **Local Development (`local.py`)**: Enforces email/console OTP verification (`REQUIRE_PATIENT_OTP = True`) prior to account activation.
+  - **Production / Render (`production.py`)**: Bypasses registration OTP (`REQUIRE_PATIENT_OTP = False`), activating accounts directly (`is_active = True`) and redirecting immediately to patient login.
+- **Staff Password Reset**: Secure OTP-based credential recovery flow for hospital staff.
+- **Access Control & Cache Security**: `@never_cache`, `@login_required`, and role-specific permissions protect sensitive user pages.
 
-## 👥 Collaboration Team
-<div align="right">
+## 🏥 Patient Features
+- **Patient Dashboard**: Central hub displaying upcoming appointments, medical history, and notification alerts.
+- **Doctor Discovery & Booking**: Search available doctors, view specialization details, and reserve appointment slots.
+- **Health Records Management**: Upload lab reports and medical documents directly to the patient profile.
+- **Notification Center**: Real-time in-app alerts and email updates regarding booking statuses and system announcements.
+
+## 👨‍⚕️ Doctor / Staff Features
+- **Doctor Dashboard**: Manage daily consultation schedules, view patient profiles, and track appointment statuses.
+- **Clinical Review**: Access uploaded patient medical records and lab report extractions during consultations.
+- **Staff Portal**: Administrative user creation, appointment oversight, and patient account management.
+- **Telemedicine Observability**: Real-time system monitoring dashboard for ongoing video consultation sessions (`/enterprise/telemedicine/`).
+
+## 📅 Appointment & Scheduling System
+- **Slot Management**: Prevents double-booking conflicts by validating doctor schedules and time availability.
+- **Status Lifecycle Tracking**: Transition appointments through `scheduled`, `completed`, and `cancelled` states.
+- **Integrated Billing**: Link appointment reservations to payment order generation.
+
+## 📹 Telemedicine
+- **Native WebSocket Signaling**: Real-time video consultation signaling built with Django Channels and ASGI Daphne backend on `ws/telemedicine/<room_id>/`.
+- **WebRTC Peer Connection**: Low-latency peer-to-peer signaling for video, audio, and room state exchange.
+- **Session Auditing**: Automated creation of consultation session records and audit logs.
+
+## 📄 Medical Records / EHR
+- **Document Management**: Secure upload and storage of PDF and image-based medical reports.
+- **OCR Text Extraction**: Automated clinical text parsing from scanned reports using Tesseract OCR (`pytesseract`), `pdf2image`, `pdfplumber`, and `pypdfium2`.
+- **Flexible File Storage**: Configured for private cloud storage via AWS S3 (`django-storages`, `boto3`) when bucket credentials are supplied, with local `FileSystemStorage` fallback.
+
+## 💳 Billing & Payments
+- **Razorpay Integration**: Native integration with the Razorpay Payment Gateway SDK for appointment fees.
+- **Payment Verification**: Server-side cryptographic signature validation (`razorpay_signature`) for transaction integrity.
+- **Asynchronous Webhooks**: Webhook listener (`RazorpayWebhookView`) to handle out-of-band payment status updates (`pending`, `completed`, `failed`).
+
+## 🔔 Notifications
+- **In-App Messaging**: Persistent database notifications rendered across user dashboards.
+- **Dual Email Architecture**:
+  - **Local Development**: Standard Django SMTP email backend for local testing.
+  - **Production**: High-deliverability HTTPS API integration via **Resend** (`resend.Emails.send`).
+
+## 🤖 AI / Intelligent Features
+- **AI Symptom Analyzer**: Clinical assistant service integrating Google's Gemini API (`google-generativeai`) to provide preliminary symptom insights.
+- **Privacy Anonymizer**: Pre-processes clinical text to redact sensitive patient identifier fields before sending prompts to external AI APIs.
+- **Async AI Pipelines**: Offloads LLM inference and heavy analysis to background Celery workers to maintain frontend responsiveness.
+
+> [!IMPORTANT]
+> AI features are strictly software-assistive tools designed to assist workflows and do NOT perform medical diagnosis or replace licensed healthcare professionals.
+
+---
+
+# 🏗️ Architecture
+
+```
+                                  +------------------------+
+                                  |     Client Browser     |
+                                  +-----------+------------+
+                                              |
+                                     HTTP / WebSockets
+                                              |
+                                              v
+                                  +------------------------+
+                                  |   Render / Docker      |
+                                  |    Daphne (ASGI)       |
+                                  +-----------+------------+
+                                              |
+                     +------------------------+------------------------+
+                     |                                                 |
+                     v                                                 v
+        +-------------------------+                       +-------------------------+
+        |   Django Core Web App   |                       |    Django Channels      |
+        |  (Accounts, EHR, etc.)  |                       |  (WebSocket Signaling)  |
+        +------------+------------+                       +------------+------------+
+                     |                                                 |
+                     |                                                 |
+        +------------+------------+                       +------------+------------+
+        |   PostgreSQL Database   |                       |      Redis Broker       |
+        +-------------------------+                       +------------+------------+
+                                                                       |
+                                                          +------------+------------+
+                                                          |      Celery Workers     |
+                                                          |  (Async Tasks & AI)     |
+                                                          +------------+------------+
+                                                                       |
+                                                    +------------------+------------------+
+                                                    |                  |                  |
+                                                    v                  v                  v
+                                             +--------------+   +--------------+   +--------------+
+                                             | Resend Email |   | Razorpay API |   | Gemini AI    |
+                                             +--------------+   +--------------+   +--------------+
+```
+
+---
+
+# 🛠️ Technology Stack
+
+| Category | Technologies |
+| :--- | :--- |
+| **Backend Framework** | Django (v6.0 / v4.2), Python 3.11+ |
+| **ASGI / WebSockets** | Django Channels, Daphne, Twisted |
+| **Database** | PostgreSQL (Production via `dj-database-url`), SQLite3 (Local) |
+| **Task Queue & Cache** | Celery, Redis (`channels_redis`) |
+| **REST APIs** | Django REST Framework (DRF), SimpleJWT, drf-spectacular (OpenAPI 3.0) |
+| **OCR & Document Parsing** | Tesseract OCR (`pytesseract`), `pdf2image`, `pdfplumber`, `pypdfium2`, ReportLab |
+| **Payments** | Razorpay SDK |
+| **Email Delivery** | Resend API (Production), SMTP Backend (Local) |
+| **AI Integration** | Google Gemini API (`google-generativeai`) |
+| **Cloud Storage** | AWS S3 (`boto3`, `django-storages`) / Local Media Storage |
+| **Containerization & Hosting** | Docker (Multi-stage build), Docker Compose, Render |
+
+---
+
+# 📂 Project Structure
+
+```text
+CareBridge/
+├── accounts/                  # Authentication, roles, custom user model & registration views
+├── ai_engine/                 # AI symptom analyzer views and endpoints
+├── ai_orchestration/          # Celery task definitions for asynchronous AI pipelines
+├── analytics/                 # Healthcare telemetry and analytics dashboards
+├── api/                       # DRF v1 endpoints, JWT authentication & API routing
+│   └── v1/                    # Versioned REST APIs and Spectacular OpenAPI schema
+├── appointments/              # Appointment scheduling logic, slots, and availability
+├── billing/                   # Razorpay payment orders, verification, and webhooks
+├── clinical_intelligence/     # AI prompt orchestration and clinical summary engines
+├── config/                    # Core Django settings & configuration
+│   ├── settings/
+│   │   ├── base.py            # Shared settings, apps, and middleware
+│   │   ├── local.py           # Local dev settings (DEBUG=True, REQUIRE_PATIENT_OTP=True)
+│   │   └── production.py      # Production settings (DEBUG=False, REQUIRE_PATIENT_OTP=False)
+│   ├── asgi.py                # ASGI application entrypoint for Channels & Daphne
+│   ├── urls.py                # Root URL routing table
+│   └── wsgi.py                # WSGI entrypoint
+├── core/                      # Shared utility functions and base models
+├── dashboard/                 # User dashboard views (Patient, Doctor, Staff)
+├── ehr/                       # Electronic Health Records & Tesseract OCR parsing engine
+├── enterprise/                # System audit logs and telemedicine observability dashboards
+├── intelligence/              # Patient data anonymizer and AI helper services
+├── notifications/             # Notification models, services, and inbox views
+├── records/                   # Storage backends and media document handlers
+├── telemedicine/              # Real-time WebSocket consumers, WebRTC signaling & sessions
+├── templates/                 # HTML templates organized by app domain
+├── tests/                     # Unit, integration, and reliability test suites
+├── .env.example               # Template for environment configuration
+├── build.sh                   # Deployment build script for Render
+├── Dockerfile                 # Multi-stage production Docker configuration
+├── docker-compose.yml         # Local multi-container development configuration
+├── entrypoint.sh              # Container startup script (migrations, superuser, static)
+├── manage.py                  # Django management script
+├── render.yaml                # Infrastructure-as-code specification for Render
+└── requirements.txt           # Python dependency specification
+```
+
+---
+
+# 🔐 Security & Configuration
+
+CareBridge is built with production security practices in mind:
+
+- **Environment Isolation**: Separate setting modules (`local.py` vs `production.py`) ensure debug features and local fallbacks are never exposed in production.
+- **HTTP Security Headers**: Enforces `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_BROWSER_XSS_FILTER`, `SECURE_CONTENT_TYPE_NOSNIFF`, and HSTS in production.
+- **Cryptographic Signature Verification**: Validates Razorpay payment webhooks and payment confirmations server-side before updating database state.
+- **Privacy Redaction**: Redacts identifiable health information before submitting symptom prompts to third-party AI APIs.
+
+> [!NOTE]
+> CareBridge is an educational and portfolio enterprise project designed with healthcare security standards, but it is not formally HIPAA certified.
+
+---
+
+# ⚙️ Environment Variables
+
+Create a `.env` file in the project root based on `.env.example`:
+
+```ini
+# Core Django Configuration
+DEBUG=True
+SECRET_KEY=your_secure_random_secret_key
+ALLOWED_HOSTS=localhost,127.0.0.1,.onrender.com
+
+# Database Configuration (PostgreSQL)
+DATABASE_URL=postgres://user:password@hostname:5432/dbname
+
+# Redis & Celery
+REDIS_URL=redis://localhost:6379/0
+
+# Email Delivery
+RESEND_API_KEY=re_your_resend_api_key
+DEFAULT_FROM_EMAIL=CareBridge <onboarding@resend.dev>
+
+# Third-Party API Keys
+GEMINI_API_KEY=your_gemini_api_key
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+
+# Optional AWS S3 Storage
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_STORAGE_BUCKET_NAME=your_s3_bucket_name
+```
+
+---
+
+# 🧪 Local Development Setup
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/NivedhReddy2048/CareBridge.git
+cd CareBridge
+```
+
+### 2. Create and Activate a Virtual Environment
+**Windows (PowerShell):**
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+```
+
+**Linux / macOS:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+Copy `.env.example` to `.env` and configure your local settings:
+```bash
+cp .env.example .env
+```
+
+### 5. Run Database Migrations
+```bash
+python manage.py migrate
+```
+
+### 6. Start Development Server
+```bash
+python manage.py runserver
+```
+Navigate to [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
+
+### 7. (Optional) Run Celery Worker & Redis
+If testing asynchronous AI tasks or background jobs locally:
+```bash
+celery -A config worker -l info
+```
+
+---
+
+# 🚀 Production Deployment
+
+CareBridge is configured for automated containerized deployment on **Render** via `render.yaml` and `Dockerfile`.
+
+- **Live URL**: [https://carebridge-ugeq.onrender.com](https://carebridge-ugeq.onrender.com)
+- **Deployment Platform**: Render (Web Service + Worker + PostgreSQL + Redis)
+- **ASGI Web Server**: Daphne serving `config.asgi:application`
+- **Build Command (`build.sh`)**:
+  ```bash
+  pip install -r requirements/production.txt
+  python manage.py collectstatic --no-input
+  python manage.py migrate
+  ```
+- **Container Entrypoint (`entrypoint.sh`)**:
+  Automatic execution of migrations, superuser bootstrapping, static file collection, and Daphne web server startup.
+
+---
+
+# 🧪 Testing
+
+To execute the automated test suite across all Django apps:
+
+```bash
+python manage.py test
+```
+
+Or using `pytest`:
+```bash
+pytest
+```
+
+---
+
+# 📸 Screenshots
+
+<!-- Add screenshot: docs/screenshots/home-page.png -->
+### 🏠 Home Page
+
+<!-- Add screenshot: docs/screenshots/patient-registration.png -->
+### 📝 Patient Registration
+
+<!-- Add screenshot: docs/screenshots/patient-dashboard.png -->
+### 📊 Patient Dashboard
+
+<!-- Add screenshot: docs/screenshots/doctor-dashboard.png -->
+### 👨‍⚕️ Doctor Dashboard
+
+<!-- Add screenshot: docs/screenshots/appointment-booking.png -->
+### 📅 Appointment Booking
+
+<!-- Add screenshot: docs/screenshots/telemedicine-call.png -->
+### 📹 Telemedicine Video Consultation
+
+<!-- Add screenshot: docs/screenshots/ehr-report-upload.png -->
+### 📄 EHR Report & OCR Parsing
+
+<!-- Add screenshot: docs/screenshots/billing-checkout.png -->
+### 💳 Billing & Razorpay Payment
+
+---
+
+# 📊 Engineering Highlights
+
+- **Environment-Aware OTP Architecture**: Flexible authentication pipeline that retains secure OTP verification locally while offering frictionless patient onboarding on cloud deployments.
+- **Asynchronous Task Offloading**: Heavy LLM processing and email delivery tasks are delegated to Celery workers, preserving low response latencies on web endpoints.
+- **Real-Time WebSockets Signaling**: Native Django Channels layer powering low-latency video consultation room creation.
+- **OCR Clinical Extraction**: Multi-library document pipeline parsing raw patient PDFs and lab images into structured text.
+- **Secure Payment Handling**: End-to-end Razorpay integration with server-side signature validation and webhook reconciliation.
+
+---
+
+# 🧭 Project Evolution
+
+CareBridge evolved through several engineering iterations:
+
+1. **Core Platform Foundation**: Development of modular Django apps (`accounts`, `appointments`, `ehr`, `dashboard`) and custom patient models.
+2. **Environment & Security Hardening**: Splitting settings into `local.py` and `production.py`, establishing environment-aware patient registration flows, and adding HTTP security headers.
+3. **Telemedicine & Async Architecture**: Integrating Django Channels, Daphne, and WebSockets for real-time consultation signaling, alongside Celery and Redis task orchestration.
+4. **EHR OCR & AI Integration**: Implementing Tesseract OCR report extractions and Google Gemini clinical analysis services.
+5. **Billing & Production Deployment**: Integrating Razorpay gateway payments, Docker containerization, and automated deployment on Render.
+
+---
+
+# 🔮 Future Improvements
+
+- [ ] **Expanded Test Coverage**: Increasing end-to-end integration test coverage for WebSocket channels and payment webhooks.
+- [ ] **Mobile Application**: Developing a native mobile client for Android and iOS patients.
+- [ ] **Enhanced Analytics**: Expanding clinical data visualization and doctor schedule analytics.
+- [ ] **Multi-Language Support**: Adding localization and multi-language translation for patient interfaces.
+
+---
+
+# 📜 License
+
+This project is currently developed for educational, research, and portfolio purposes.
+
+---
+
+# 👨‍💻 Developer
+
+**Nivedh Reddy**
+- **GitHub**: [https://github.com/NivedhReddy2048](https://github.com/NivedhReddy2048)
+
+---
+
+# 🤝 Contribution Team
+
+<div align="center">
+
 <a href="https://github.com/KailashSatkuri-warangal">
-  <img src="https://github.com/KailashSatkuri-warangal.png" width="60px" style="border-radius:50%" title="Kailash Satkuri" />
+  <img src="https://github.com/KailashSatkuri-warangal.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Kailash Satkuri" />
+  <br /><sub><b>Kailash Satkuri</b></sub>
 </a>
+&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://github.com/SHIVASHANKAR-KODURI">
-  <img src="https://github.com/SHIVASHANKAR-KODURI.png" width="60px" style="border-radius:50%" title="Koduri Shiva Shankar" />
+  <img src="https://github.com/SHIVASHANKAR-KODURI.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Koduri Shiva Shankar" />
+  <br /><sub><b>Koduri Shiva Shankar</b></sub>
 </a>
+&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://github.com/Hrudairaj">
-  <img src="https://github.com/Hrudairaj.png" width="60px" style="border-radius:50%" title="Gogikar Hrudai" />
+  <img src="https://github.com/Hrudairaj.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Gogikar Hrudai" />
+  <br /><sub><b>Gogikar Hrudai</b></sub>
 </a>
+&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://github.com/Siddhartha741">
-  <img src="https://github.com/Siddhartha741.png" width="60px" style="border-radius:50%" title="Siddhartha Namilikonda" />
+  <img src="https://github.com/Siddhartha741.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Siddhartha Namilikonda" />
+  <br /><sub><b>Siddhartha Namilikonda</b></sub>
 </a>
+&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://github.com/NivedhReddy2048">
-  <img src="https://github.com/NivedhReddy2048.png" width="60px" style="border-radius:50%" title="Nivedh Reddy" />
+  <img src="https://github.com/NivedhReddy2048.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Nivedh Reddy" />
+  <br /><sub><b>Nivedh Reddy</b></sub>
 </a>
+
 </div>
