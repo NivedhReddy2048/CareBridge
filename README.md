@@ -10,8 +10,7 @@ Built with a modular Django architecture, CareBridge incorporates asynchronous b
 
 - **Deployed Application**: [🔴 Live Demo — CareBridge](https://carebridge-ugeq.onrender.com)
 - **Enterprise Analytics & Monitoring Portal**: [CareBridge Enterprise Portal](https://carebridge-ugeq.onrender.com/enterprise/)
-- **Staff / Doctor Portal**: [CareBridge Staff Login](https://carebridge-ugeq.onrender.com/login/staff/)
-- **Administrative Portal**: `https://carebridge-ugeq.onrender.com/admin/`
+- **Administrative Portal**: [Admin Portal](https://carebridge-ugeq.onrender.com/admin/)
 
 ---
 
@@ -191,90 +190,6 @@ CareBridge is built with production security practices in mind:
 
 ---
 
-# ⚙️ Environment Variables
-
-Create a `.env` file in the project root based on `.env.example`:
-
-```ini
-# Core Django Configuration
-DEBUG=True
-SECRET_KEY=your_secure_random_secret_key
-ALLOWED_HOSTS=localhost,127.0.0.1,.onrender.com
-
-# Database Configuration (PostgreSQL)
-DATABASE_URL=postgres://user:password@hostname:5432/dbname
-
-# Redis & Celery
-REDIS_URL=redis://localhost:6379/0
-
-# Email Delivery
-RESEND_API_KEY=re_your_resend_api_key
-DEFAULT_FROM_EMAIL=CareBridge <onboarding@resend.dev>
-
-# Third-Party API Keys
-GEMINI_API_KEY=your_gemini_api_key
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-
-# Optional AWS S3 Storage
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-AWS_STORAGE_BUCKET_NAME=your_s3_bucket_name
-```
-
----
-
-# 🧪 Local Development Setup
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/NivedhReddy2048/CareBridge.git
-cd CareBridge
-```
-
-### 2. Create and Activate a Virtual Environment
-**Windows (PowerShell):**
-```powershell
-python -m venv venv
-.\venv\Scripts\activate
-```
-
-**Linux / macOS:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure Environment Variables
-Copy `.env.example` to `.env` and configure your local settings:
-```bash
-cp .env.example .env
-```
-
-### 5. Run Database Migrations
-```bash
-python manage.py migrate
-```
-
-### 6. Start Development Server
-```bash
-python manage.py runserver
-```
-Navigate to [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
-
-### 7. (Optional) Run Celery Worker & Redis
-If testing asynchronous AI tasks or background jobs locally:
-```bash
-celery -A config worker -l info
-```
-
----
-
 # 🚀 Production Deployment
 
 CareBridge is configured for automated containerized deployment on **Render** via `render.yaml` and `Dockerfile`.
@@ -282,29 +197,8 @@ CareBridge is configured for automated containerized deployment on **Render** vi
 - **Live URL**: [https://carebridge-ugeq.onrender.com](https://carebridge-ugeq.onrender.com)
 - **Deployment Platform**: Render (Web Service + Worker + PostgreSQL + Redis)
 - **ASGI Web Server**: Daphne serving `config.asgi:application`
-- **Build Command (`build.sh`)**:
-  ```bash
-  pip install -r requirements/production.txt
-  python manage.py collectstatic --no-input
-  python manage.py migrate
-  ```
 - **Container Entrypoint (`entrypoint.sh`)**:
   Automatic execution of migrations, superuser bootstrapping, static file collection, and Daphne web server startup.
-
----
-
-# 🧪 Testing
-
-To execute the automated test suite across all Django apps:
-
-```bash
-python manage.py test
-```
-
-Or using `pytest`:
-```bash
-pytest
-```
 
 ---
 
@@ -380,33 +274,38 @@ This project is currently developed for educational, research, and portfolio pur
 
 ---
 
-# 🤝 Contribution Team
+👥 Collaboration Team
 
-<div align="center">
+<div align="right">
 
 <a href="https://github.com/KailashSatkuri-warangal">
-  <img src="https://github.com/KailashSatkuri-warangal.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Kailash Satkuri" />
-  <br /><sub><b>Kailash Satkuri</b></sub>
+
+<img src="https://github.com/KailashSatkuri-warangal.png" width="60px" style="border-radius:50%" title="Kailash Satkuri" />
+
 </a>
-&nbsp;&nbsp;&nbsp;&nbsp;
+
 <a href="https://github.com/SHIVASHANKAR-KODURI">
-  <img src="https://github.com/SHIVASHANKAR-KODURI.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Koduri Shiva Shankar" />
-  <br /><sub><b>Koduri Shiva Shankar</b></sub>
+
+<img src="https://github.com/SHIVASHANKAR-KODURI.png" width="60px" style="border-radius:50%" title="Koduri Shiva Shankar" />
+
 </a>
-&nbsp;&nbsp;&nbsp;&nbsp;
+
 <a href="https://github.com/Hrudairaj">
-  <img src="https://github.com/Hrudairaj.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Gogikar Hrudai" />
-  <br /><sub><b>Gogikar Hrudai</b></sub>
+
+<img src="https://github.com/Hrudairaj.png" width="60px" style="border-radius:50%" title="Gogikar Hrudai" />
+
 </a>
-&nbsp;&nbsp;&nbsp;&nbsp;
+
 <a href="https://github.com/Siddhartha741">
-  <img src="https://github.com/Siddhartha741.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Siddhartha Namilikonda" />
-  <br /><sub><b>Siddhartha Namilikonda</b></sub>
+
+<img src="https://github.com/Siddhartha741.png" width="60px" style="border-radius:50%" title="Siddhartha Namilikonda" />
+
 </a>
-&nbsp;&nbsp;&nbsp;&nbsp;
+
 <a href="https://github.com/NivedhReddy2048">
-  <img src="https://github.com/NivedhReddy2048.png" width="80px" style="border-radius:50%; margin: 10px;" alt="Nivedh Reddy" />
-  <br /><sub><b>Nivedh Reddy</b></sub>
+
+<img src="https://github.com/NivedhReddy2048.png" width="60px" style="border-radius:50%" title="Nivedh Reddy" />
+
 </a>
 
 </div>
