@@ -107,27 +107,36 @@ def register_view(request):
             form = PatientRegistrationForm(request.POST, request.FILES)
             
             if form.is_valid():
-                user = form.save(commit=False)
-                user.is_active = False 
-                user.save()
-                
-                otp = str(random.randint(100000, 999999))
-                request.session['reg_otp'] = otp
-                request.session['reg_user_id'] = user.id
-                request.session['reg_email'] = user.email
-                
-                try:
-                    send_otp_email(user.email, otp, subject='CareBridge - Verify Your Account')
-                    messages.success(request, f"Verification code sent to {user.email}")
-                    return redirect('verify_otp')
-                except Exception as e:
-                    if settings.DEBUG:
-                        print(f"\n================================\nCAREBRIDGE OTP DEBUG\nUser: {user.email}\nOTP: {otp}\n==========\n")
-                        messages.warning(request, "Email service temporarily unavailable. Using debug fallback.")
+                require_otp = getattr(settings, 'REQUIRE_PATIENT_OTP', True)
+
+                if require_otp:
+                    user = form.save(commit=False)
+                    user.is_active = False
+                    user.save()
+
+                    otp = str(random.randint(100000, 999999))
+                    request.session['reg_otp'] = otp
+                    request.session['reg_user_id'] = user.id
+                    request.session['reg_email'] = user.email
+
+                    try:
+                        send_otp_email(user.email, otp, subject='CareBridge - Verify Your Account')
+                        messages.success(request, f"Verification code sent to {user.email}")
                         return redirect('verify_otp')
-                    else:
-                        user.delete()
-                        messages.error(request, "Email service temporarily unavailable. Registration cancelled.")
+                    except Exception as e:
+                        if settings.DEBUG:
+                            print(f"\n================================\nCAREBRIDGE OTP DEBUG\nUser: {user.email}\nOTP: {otp}\n==========\n")
+                            messages.warning(request, "Email service temporarily unavailable. Using debug fallback.")
+                            return redirect('verify_otp')
+                        else:
+                            user.delete()
+                            messages.error(request, "Email service temporarily unavailable. Registration cancelled.")
+                else:
+                    user = form.save(commit=False)
+                    user.is_active = True
+                    user.save()
+                    messages.success(request, "Account created successfully! You can now log in.")
+                    return redirect('patient_login')
             else:
                 messages.error(request, "Registration Failed. Please check inputs.")
         except Exception as e:

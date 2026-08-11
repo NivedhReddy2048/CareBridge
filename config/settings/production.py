@@ -126,4 +126,7 @@ CSP_IMG_SRC = ("'self'", "data:", "https:")
 # Database Connection Pooling (Handled by dj_database_url conn_max_age above)
 # We set conn_max_age=600 which enables persistent connections.
 
+# Patient Registration OTP Requirement
+REQUIRE_PATIENT_OTP = False
+
 print("FINAL ALLOWED_HOSTS =", ALLOWED_HOSTS)

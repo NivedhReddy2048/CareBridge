@@ -28,4 +28,7 @@ CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_BROKER_URL = 'memory://'
 CELERY_RESULT_BACKEND = 'cache+memory://'
 
+# Patient Registration OTP Requirement
+REQUIRE_PATIENT_OTP = True
+
 print("Running with local settings.")
