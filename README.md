@@ -207,26 +207,33 @@ CareBridge is configured for automated containerized deployment on **Render** vi
 <!-- Add screenshot: docs/screenshots/home-page.png -->
 ### 🏠 Home Page
 
-<!-- Add screenshot: docs/screenshots/patient-registration.png -->
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Home%20Page.png?raw=true)
+
 ### 📝 Patient Registration
 
-<!-- Add screenshot: docs/screenshots/patient-dashboard.png -->
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Patient%20Registration.png?raw=true)
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Patient%20Login.png?raw=true)
+
 ### 📊 Patient Dashboard
 
-<!-- Add screenshot: docs/screenshots/doctor-dashboard.png -->
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Patient%20Dashboard.png?raw=true)
+
 ### 👨‍⚕️ Doctor Dashboard
 
-<!-- Add screenshot: docs/screenshots/appointment-booking.png -->
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Doctor%20Dashboard.png?raw=true)
+
 ### 📅 Appointment Booking
 
-<!-- Add screenshot: docs/screenshots/telemedicine-call.png -->
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Appointment%20Booking.png?raw=true)
+
 ### 📹 Telemedicine Video Consultation
 
-<!-- Add screenshot: docs/screenshots/ehr-report-upload.png -->
-### 📄 EHR Report & OCR Parsing
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Video%20Consultation.png?raw=true)
 
-<!-- Add screenshot: docs/screenshots/billing-checkout.png -->
 ### 💳 Billing & Razorpay Payment
+
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Billing.png?raw=true)
+![Student Login](https://github.com/NivedhReddy2048/CareBridge/blob/master/Screenshots/Razor_Pay.png?raw=true)
 
 ---
 
